@@ -1,0 +1,192 @@
+---
+import Button from './Button.astro';
+import Icon from './Icon.astro';
+import { nav, site } from '../data/site';
+---
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="wordmark" href="#inicio" aria-label={`${site.name}, ir al inicio`}>
+      <span class="wordmark__name">Clock Time</span>
+      <span class="wordmark__sub">Chile · Alta relojería</span>
+    </a>
+
+    <nav class="nav" id="nav" aria-label="Principal">
+      <ul>
+        {
+          nav.map((item) => (
+            <li>
+              <a class="ct-btn ct-btn--ghost" href={item.href}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header__actions">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Cambiar a tema Marfil">
+        <Icon name="sun" size={20} class="icon-sun" />
+        <Icon name="moon" size={20} class="icon-moon" />
+      </button>
+      <Button href={site.instagram.dm} class="header__cta">Escríbenos</Button>
+      <button class="icon-btn nav-toggle" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menú">
+        <Icon name="menu" size={22} class="icon-open" />
+        <Icon name="close" size={22} class="icon-close" />
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 72px;
+  }
+
+  .wordmark {
+    display: grid;
+    gap: 2px;
+    text-decoration: none;
+    color: var(--gold-text);
+  }
+
+  .wordmark__name {
+    font: 500 20px/24px var(--font-display);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .wordmark__sub {
+    font: 600 9px/12px var(--font-sans);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .nav ul {
+    display: flex;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav .ct-btn {
+    padding-inline: var(--space-3);
+  }
+
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .icon-btn:hover {
+    color: var(--gold-text);
+    border-color: var(--gold);
+  }
+
+  :global([data-theme='marfil']) .icon-sun,
+  :global(:root:not([data-theme='marfil'])) .icon-moon,
+  .nav-toggle[aria-expanded='false'] .icon-close,
+  .nav-toggle[aria-expanded='true'] .icon-open {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .nav-toggle {
+      display: grid;
+    }
+
+    .nav {
+      position: absolute;
+      inset: 100% 0 auto;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      display: none;
+    }
+
+    .nav.is-open {
+      display: block;
+    }
+
+    .nav ul {
+      flex-direction: column;
+      padding: var(--space-2) var(--space-4) var(--space-4);
+    }
+
+    .nav .ct-btn {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .header__cta {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
+  const nav = document.getElementById('nav');
+
+  const setOpen = (open: boolean) => {
+    toggle?.setAttribute('aria-expanded', String(open));
+    toggle?.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    nav?.classList.toggle('is-open', open);
+  };
+
+  toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  nav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+
+  const themeBtn = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const syncLabel = () => {
+    const isMarfil = document.documentElement.dataset.theme === 'marfil';
+    themeBtn?.setAttribute('aria-label', isMarfil ? 'Cambiar a tema Noche' : 'Cambiar a tema Marfil');
+  };
+
+  syncLabel();
+  themeBtn?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'marfil' ? 'noche' : 'marfil';
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem('ct-theme', next);
+    } catch {}
+    syncLabel();
+  });
+</script>

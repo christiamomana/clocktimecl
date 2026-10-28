@@ -1,0 +1,43 @@
+---
+// Esfera ilustrada: el motivo del monograma CT (reloj dentro de un medallón dorado).
+interface Props {
+  size?: number;
+  class?: string;
+}
+
+const { size = 120, class: className } = Astro.props;
+const ticks = Array.from({ length: 12 }, (_, i) => {
+  const a = (i * Math.PI) / 6;
+  const major = i % 3 === 0;
+  const r1 = major ? 30 : 33;
+  const r2 = 38;
+  const f = (n: number) => n.toFixed(2);
+  return {
+    major,
+    x1: f(60 + r1 * Math.sin(a)),
+    y1: f(60 - r1 * Math.cos(a)),
+    x2: f(60 + r2 * Math.sin(a)),
+    y2: f(60 - r2 * Math.cos(a)),
+  };
+});
+---
+
+<svg class={className} viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
+  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--gold)" stroke-width="1.5"></circle>
+  <circle cx="60" cy="60" r="44" fill="var(--surface-raised)" stroke="var(--line)"></circle>
+  {
+    ticks.map((t) => (
+      <line
+        x1={t.x1}
+        y1={t.y1}
+        x2={t.x2}
+        y2={t.y2}
+        stroke="var(--gold-bright)"
+        stroke-width={t.major ? 2.5 : 1.2}
+        stroke-linecap="square"
+      />
+    ))
+  }
+  <path d="M60 60V30M60 60l17 10" stroke="var(--gold-bright)" stroke-width="2.5" stroke-linecap="round"></path>
+  <circle cx="60" cy="60" r="3" fill="var(--gold)"></circle>
+</svg>

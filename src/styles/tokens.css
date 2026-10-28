@@ -1,0 +1,60 @@
+/* Clock Time Chile — tokens del sistema de diseño (tokens.json).
+   Noche es el tema principal; Marfil es el tema claro. */
+:root,
+:root[data-theme='noche'] {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --surface: #151413;
+  --surface-raised: #221f1b;
+  --line: #4a3d26;
+  --ink: #f3ede2;
+  --ink-muted: #a39b8c;
+  --gold: #c9a45c;
+  --gold-bright: #e6cd8e;
+  --gold-deep: #8c6b30;
+  --gold-text: #d4b06a;
+  --on-gold: #0b0b0c;
+  --success: #6fb884;
+  --danger: #e07a70;
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-gold-glow: 0 0 0 1px rgba(201, 164, 92, 0.35), 0 0 24px rgba(201, 164, 92, 0.18);
+}
+
+:root[data-theme='marfil'] {
+  color-scheme: light;
+  --bg: #f6f1e7;
+  --surface: #fffdf8;
+  --surface-raised: #efe7d8;
+  --line: #d8c9a6;
+  --ink: #17140f;
+  --ink-muted: #5f574b;
+  --gold: #b38b45;
+  --gold-bright: #c9a45c;
+  --gold-deep: #7a5c24;
+  --gold-text: #7a5c24;
+  --on-gold: #0b0b0c;
+  --success: #2f7a47;
+  --danger: #a8322a;
+  --shadow-card: 0 8px 24px rgba(23, 20, 15, 0.12);
+  --shadow-gold-glow: 0 0 0 1px rgba(179, 139, 69, 0.45), 0 0 16px rgba(179, 139, 69, 0.15);
+}
+
+:root {
+  --font-display: Cinzel, 'Trajan Pro', Georgia, serif;
+  --font-sans: Montserrat, 'Helvetica Neue', Arial, system-ui, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-full: 9999px;
+
+  --container: 1200px;
+}

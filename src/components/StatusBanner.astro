@@ -1,0 +1,15 @@
+---
+interface Props {
+  word?: string;
+  sub?: string;
+  flat?: boolean;
+}
+
+const { word = 'Vendido', sub = 'Inicia su tiempo en otro lugar', flat = false } = Astro.props;
+---
+
+<div class:list={['ct-status', { 'ct-status--flat': flat }]}>
+  <span class="ct-status__word ct-foil-text">{word}</span>
+  <span class="ct-status__sub">{sub}</span>
+  <span class="ct-status__brand">Gracias por confiar en Clock Time Chile</span>
+</div>

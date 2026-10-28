@@ -1,0 +1,17 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../data/icons';
+
+interface Props {
+  icon: IconName;
+  /** Rótulo en dos líneas cortas: ['Tasación', 'profesional'] */
+  label: [string, string];
+}
+
+const { icon, label } = Astro.props;
+---
+
+<div class="ct-service">
+  <span class="ct-service__icon"><Icon name={icon} size={22} /></span>
+  <span class="ct-service__label">{label[0]}<br />{label[1]}</span>
+</div>
