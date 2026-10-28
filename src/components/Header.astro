@@ -1,192 +1,63 @@
 ---
-import Button from './Button.astro';
-import Icon from './Icon.astro';
-import { nav, site } from '../data/site';
+import { site } from '../data/site';
 ---
 
-<header class="header">
-  <div class="container header__inner">
-    <a class="wordmark" href="#inicio" aria-label={`${site.name}, ir al inicio`}>
-      <span class="wordmark__name">Clock Time</span>
-      <span class="wordmark__sub">Chile · Alta relojería</span>
+<header class="bar" id="bar">
+  <div class="bar__in wrap">
+    <button class="bar__menu" id="openMenu" aria-expanded="false" aria-controls="menu"><i aria-hidden="true"></i>Menú</button>
+    <a class="bar__logo" href="#top" aria-label="Clock Time Chile, inicio">
+      <img src="/img/logo-150.webp" width="40" height="40" alt="" />
+      <span><b>CLOCK TIME</b><span>CHILE</span></span>
     </a>
-
-    <nav class="nav" id="nav" aria-label="Principal">
-      <ul>
-        {
-          nav.map((item) => (
-            <li>
-              <a class="ct-btn ct-btn--ghost" href={item.href}>
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+    <nav class="bar__links" aria-label="Accesos">
+      <a href="#coleccion"><span>Piezas</span></a>
+      <a href="#vender"><span>Vender</span></a>
+      <a href={site.dm} target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>
+        <span>Escríbenos</span>
+      </a>
     </nav>
-
-    <div class="header__actions">
-      <button class="icon-btn" type="button" data-theme-toggle aria-label="Cambiar a tema Marfil">
-        <Icon name="sun" size={20} class="icon-sun" />
-        <Icon name="moon" size={20} class="icon-moon" />
-      </button>
-      <Button href={site.instagram.dm} class="header__cta">Escríbenos</Button>
-      <button class="icon-btn nav-toggle" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menú">
-        <Icon name="menu" size={22} class="icon-open" />
-        <Icon name="close" size={22} class="icon-close" />
-      </button>
-    </div>
   </div>
 </header>
 
-<style>
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .header__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    min-height: 72px;
-  }
-
-  .wordmark {
-    display: grid;
-    gap: 2px;
-    text-decoration: none;
-    color: var(--gold-text);
-  }
-
-  .wordmark__name {
-    font: 500 20px/24px var(--font-display);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .wordmark__sub {
-    font: 600 9px/12px var(--font-sans);
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-  }
-
-  .nav ul {
-    display: flex;
-    gap: var(--space-1);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .nav .ct-btn {
-    padding-inline: var(--space-3);
-  }
-
-  .header__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  .icon-btn {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    color: var(--ink);
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-full);
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .icon-btn:hover {
-    color: var(--gold-text);
-    border-color: var(--gold);
-  }
-
-  :global([data-theme='marfil']) .icon-sun,
-  :global(:root:not([data-theme='marfil'])) .icon-moon,
-  .nav-toggle[aria-expanded='false'] .icon-close,
-  .nav-toggle[aria-expanded='true'] .icon-open {
-    display: none;
-  }
-
-  .nav-toggle {
-    display: none;
-  }
-
-  @media (max-width: 1023px) {
-    .nav-toggle {
-      display: grid;
-    }
-
-    .nav {
-      position: absolute;
-      inset: 100% 0 auto;
-      background: var(--bg);
-      border-bottom: 1px solid var(--line);
-      display: none;
-    }
-
-    .nav.is-open {
-      display: block;
-    }
-
-    .nav ul {
-      flex-direction: column;
-      padding: var(--space-2) var(--space-4) var(--space-4);
-    }
-
-    .nav .ct-btn {
-      width: 100%;
-      justify-content: flex-start;
-    }
-  }
-
-  @media (max-width: 479px) {
-    .header__cta {
-      display: none;
-    }
-  }
-</style>
+<div class="menu wrap" id="menu" role="dialog" aria-modal="true" aria-label="Menú">
+  <div class="menu__top">
+    <button class="menu__close" id="closeMenu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+      Cerrar
+    </button>
+  </div>
+  <nav aria-label="Secciones">
+    <a href="#coleccion">Piezas disponibles</a>
+    <a href="#vender">Vender tu reloj</a>
+    <a href="#garantia">Garantía y pago</a>
+    <a href="#historia">Nuestra historia</a>
+    <a href="#preguntas">Preguntas</a>
+    <a href="#tasar">Pedir una tasación</a>
+  </nav>
+  <div class="menu__foot">
+    <span>Concepción, Biobío · Envíos a todo Chile</span>
+    <a href={site.instagram} target="_blank" rel="noopener">{site.handle}</a>
+  </div>
+</div>
 
 <script>
-  const toggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
-  const nav = document.getElementById('nav');
+  const bar = document.getElementById('bar')!;
+  addEventListener('scroll', () => bar.classList.toggle('is-scrolled', scrollY > 8), { passive: true });
 
-  const setOpen = (open: boolean) => {
-    toggle?.setAttribute('aria-expanded', String(open));
-    toggle?.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
-    nav?.classList.toggle('is-open', open);
+  const menu = document.getElementById('menu')!;
+  const open = document.getElementById('openMenu')!;
+  const close = document.getElementById('closeMenu')!;
+  const setMenu = (v: boolean) => {
+    menu.classList.toggle('is-open', v);
+    open.setAttribute('aria-expanded', String(v));
+    document.body.style.overflow = v ? 'hidden' : '';
+    (v ? close : open).focus();
   };
-
-  toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
-  nav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
-
-  const themeBtn = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
-  const syncLabel = () => {
-    const isMarfil = document.documentElement.dataset.theme === 'marfil';
-    themeBtn?.setAttribute('aria-label', isMarfil ? 'Cambiar a tema Noche' : 'Cambiar a tema Marfil');
-  };
-
-  syncLabel();
-  themeBtn?.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'marfil' ? 'noche' : 'marfil';
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem('ct-theme', next);
-    } catch {}
-    syncLabel();
+  open.addEventListener('click', () => setMenu(true));
+  close.addEventListener('click', () => setMenu(false));
+  menu.querySelectorAll('nav a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('is-open')) setMenu(false);
   });
 </script>

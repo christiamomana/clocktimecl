@@ -1,0 +1,13 @@
+---
+import { pic, type PicOptions } from '../lib/pic';
+
+interface Props extends PicOptions {
+  name: string;
+  sizes?: string;
+  alt?: string;
+}
+
+const { name, sizes = '(max-width: 900px) 100vw, 50vw', alt = '', ...opt } = Astro.props;
+---
+
+<Fragment set:html={pic(name, sizes, alt, opt)} />

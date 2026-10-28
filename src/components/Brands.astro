@@ -1,0 +1,11 @@
+---
+import { brands } from '../data/site';
+---
+
+<section class="brands" aria-label="Marcas">
+  <p>Compramos y vendemos las grandes casas</p>
+  <div class="marquee" aria-hidden="true">
+    {[...brands, ...brands].map((b) => <span>{b}</span>)}
+  </div>
+  <span class="sr">{brands.join(', ')} y otras marcas de alta relojería.</span>
+</section>

@@ -1,0 +1,36 @@
+---
+const faqs = [
+  {
+    q: '¿Cómo tasan mi reloj?',
+    a: 'Con fotos de la esfera, el fondo y los papeles, más la marca, la referencia y el año. Revisamos estado, originalidad y si conserva caja y documentación, y te damos un valor de mercado.',
+  },
+  { q: '¿El pago es realmente inmediato?', a: 'Sí. Cuando acordamos la compra y verificamos la pieza, te pagamos en el momento.' },
+  {
+    q: '¿Qué es la consignación?',
+    a: 'Dejas tu reloj con nosotros y lo ofrecemos a nuestros clientes por un precio acordado contigo. Cuando se vende, recibes tu parte. Te explicamos las condiciones por DM.',
+  },
+  {
+    q: '¿Qué cubre la garantía?',
+    a: 'Los relojes que vendemos tienen 3 meses de garantía de funcionamiento. Cada ficha indica qué incluye la pieza: reloj, caja y documentación.',
+  },
+  { q: '¿Puedo pagar en cuotas?', a: 'Sí, con tarjeta de crédito hasta 12 cuotas. Consulta las condiciones por DM.' },
+  { q: '¿Envían fuera de Concepción?', a: 'Sí, a todo Chile, con envío seguro. También compramos relojes de otras ciudades.' },
+];
+---
+
+<section class="faq wrap" id="preguntas" aria-labelledby="faqTitle">
+  <div class="faq__in">
+    <span class="eyebrow center" style="color:var(--gold-ink)">Ayuda</span>
+    <h2 id="faqTitle" class="center">Preguntas frecuentes</h2>
+    {
+      faqs.map((f) => (
+        <details>
+          <summary>
+            {f.q} <span class="pm" aria-hidden="true" />
+          </summary>
+          <div class="ans"><div><p>{f.a}</p></div></div>
+        </details>
+      ))
+    }
+  </div>
+</section>

@@ -1,0 +1,124 @@
+---
+import Pic from './Pic.astro';
+import { pieces } from '../data/pieces';
+import { site } from '../data/site';
+
+const first = pieces[0];
+---
+
+<section class="coll" id="coleccion" aria-labelledby="collTitle">
+  <div class="coll__head wrap center reveal">
+    <span class="eyebrow" style="color:var(--gold-ink)">Relojes Clock Time</span>
+    <h2 id="collTitle">La selección</h2>
+    <p>Piezas reales de nuestra vitrina, con su caja y sus papeles. Toca una para ver su ficha.</p>
+  </div>
+  <div class="rail">
+    <div class="rail__track wrap" id="track" role="group" aria-label="Piezas">
+      {
+        pieces.map((p, i) => (
+          <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>
+            {p.reserved ? <span class="tag tag--sold">Reservado</span> : p.tag && <span class="tag">{p.tag}</span>}
+            <div class="tile__art">
+              <Pic name={p.img} sizes="(max-width: 700px) 70vw, 340px" alt={`${p.brand} ${p.name}`} pos={p.pos} />
+            </div>
+            <small>{p.brand}</small>
+            <b>{p.name}</b>
+            <span class="tnum">{p.ref} · {p.size}</span>
+          </button>
+        ))
+      }
+    </div>
+    <div class="rail__nav wrap">
+      <div class="rail__prog" aria-hidden="true"><i id="prog"></i></div>
+      <div class="rail__btns">
+        <button class="circle" id="prev" aria-label="Anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+        </button>
+        <button class="circle" id="next" aria-label="Siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="piece" id="ficha" aria-labelledby="pTitle">
+  <div class="piece__grid">
+    <div class="piece__art" id="pArt">
+      <Pic name={first.img} sizes="(max-width: 900px) 100vw, 55vw" alt={`${first.brand} ${first.name}`} pos={first.pos} eager />
+    </div>
+    <div class="piece__txt">
+      <span class="eyebrow" id="pBrand">{first.brand}</span>
+      <h2 id="pTitle">{first.name}</h2>
+      <p class="desc" id="pDesc">{first.desc}</p>
+      <dl class="specs tnum" id="pSpecs">
+        {first.specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+      <div class="incl-list" id="pIncl">
+        {first.incl.map((x) => <span>{x}</span>)}
+      </div>
+      <div class="actions">
+        <a class="pill pill--gold" id="pAsk" href={site.dm} target="_blank" rel="noopener">
+          {first.reserved ? 'Buscar una pieza similar' : 'Consultar precio'}
+        </a>
+        <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
+      </div>
+      <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { pieces } from '../data/pieces';
+  import { pic } from '../lib/pic';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const track = $('track');
+  const art = $('pArt');
+
+  const el = (tag: string, text: string) => {
+    const n = document.createElement(tag);
+    n.textContent = text;
+    return n;
+  };
+
+  function show(i: number) {
+    const p = pieces[i];
+    track.querySelectorAll<HTMLElement>('.tile').forEach((t) => t.setAttribute('aria-pressed', String(t.dataset.i === String(i))));
+    art.classList.add('is-out');
+    setTimeout(() => {
+      art.innerHTML = pic(p.img, '(max-width: 900px) 100vw, 55vw', `${p.brand} ${p.name}`, { pos: p.pos, eager: true });
+      $('pBrand').textContent = p.brand;
+      $('pTitle').textContent = p.name;
+      $('pDesc').textContent = p.desc;
+      $('pSpecs').replaceChildren(
+        ...p.specs.map(([k, v]) => {
+          const d = document.createElement('div');
+          d.append(el('dt', k), el('dd', v));
+          return d;
+        }),
+      );
+      $('pIncl').replaceChildren(...p.incl.map((x) => el('span', x)));
+      $('pAsk').textContent = p.reserved ? 'Buscar una pieza similar' : 'Consultar precio';
+      art.classList.remove('is-out');
+    }, 280);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('ficha').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  track.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('.tile');
+    if (t) show(Number(t.dataset.i));
+  });
+
+  const prog = $('prog');
+  const upd = () => {
+    const m = track.scrollWidth - track.clientWidth;
+    prog.style.transform = `scaleX(${m > 0 ? 0.2 + (0.8 * track.scrollLeft) / m : 1})`;
+  };
+  track.addEventListener('scroll', upd, { passive: true });
+  addEventListener('resize', upd);
+  upd();
+  $('prev').addEventListener('click', () => track.scrollBy({ left: -360, behavior: 'smooth' }));
+  $('next').addEventListener('click', () => track.scrollBy({ left: 360, behavior: 'smooth' }));
+</script>

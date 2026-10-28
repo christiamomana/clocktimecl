@@ -1,0 +1,29 @@
+---
+import Pic from './Pic.astro';
+
+const stories = [
+  { href: '#vender', pic: 'tag-formula1', alt: 'TAG Heuer Formula 1 sobre su estuche', eyebrow: 'Compra', title: ['Pago inmediato', 'por tu reloj'] },
+  { href: '#preguntas', pic: 'rolex-reservado', alt: 'Rolex en su caja original', pos: '50% 70%', eyebrow: 'Consignación', title: ['Tu reloj en', 'nuestra vitrina'] },
+  { href: '#garantia', pic: 'radiomir-gmt', alt: 'Panerai Radiomir GMT de oro rojo en su estuche', eyebrow: 'Venta', title: ['Garantía de', '3 meses'] },
+];
+---
+
+<section class="stories" aria-label="Nuestros servicios">
+  <div class="wrap">
+    <div class="stories__grid">
+      {
+        stories.map((s, i) => (
+          <a class="story reveal" style={`--i:${i}`} href={s.href}>
+            <div class="story__art">
+              <Pic name={s.pic} alt={s.alt} pos={s.pos} />
+            </div>
+            <div class="story__txt">
+              <span class="eyebrow">{s.eyebrow}</span>
+              <h3>{s.title[0]}<br />{s.title[1]}</h3>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>

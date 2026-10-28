@@ -1,0 +1,37 @@
+---
+import Pic from './Pic.astro';
+
+const checks = [
+  { title: 'Caja y documentación original', text: 'Indicadas en cada ficha, cuando la pieza las conserva.' },
+  { title: 'Garantía de 3 meses', text: 'Sobre el funcionamiento del reloj.' },
+  { title: 'Hasta 12 cuotas con tarjeta', text: 'Visa, Mastercard, American Express, Diners Club y Mercado Pago.' },
+  { title: 'Envío seguro a todo Chile', text: 'O retiro coordinado en Concepción.' },
+];
+---
+
+<section class="incl wrap" id="garantia" aria-labelledby="inclTitle">
+  <div class="incl__grid">
+    <div class="incl__art reveal">
+      <Pic name="longines-moonphase" alt="Longines Master Collection en su caja, con la tarjeta de garantía internacional" />
+    </div>
+    <div>
+      <span class="eyebrow reveal">Comprar con confianza</span>
+      <h2 id="inclTitle" class="reveal" style="--i:1">Lo que trae cada reloj</h2>
+      <p class="incl__lead reveal" style="--i:2">Cada pieza sale revisada y con su historia en regla.</p>
+      <ul class="checks">
+        {
+          checks.map((c, i) => (
+            <li class="reveal" style={`--i:${i}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8c6b30" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M7.5 12.5l3 3 6-6.5" />
+              </svg>
+              <div><b>{c.title}</b><span>{c.text}</span></div>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="actions reveal"><a class="pill pill--ink" href="#coleccion">Ver las piezas</a></div>
+    </div>
+  </div>
+</section>

@@ -1,108 +1,53 @@
 ---
-import Icon from './Icon.astro';
-import { nav, site } from '../data/site';
+import { site } from '../data/site';
 
 const year = new Date().getFullYear();
+const cols = [
+  {
+    title: 'Piezas',
+    links: [
+      ['Panerai', '#coleccion'], ['Omega', '#coleccion'], ['TAG Heuer', '#coleccion'],
+      ['Longines', '#coleccion'], ['Movado', '#coleccion'], ['Toda la selección', '#coleccion'],
+    ],
+  },
+  {
+    title: 'Servicios',
+    links: [
+      ['Compra con pago inmediato', '#vender'], ['Consignación', '#preguntas'],
+      ['Tasación profesional', '#tasar'], ['Garantía de 3 meses', '#garantia'],
+    ],
+  },
+  {
+    title: 'Clock Time',
+    links: [['Nuestra historia', '#historia'], ['Preguntas frecuentes', '#preguntas'], ['Envíos a todo Chile', '#garantia']],
+  },
+  { title: 'Canales oficiales', links: [['Instagram', site.instagram], ['Mensaje directo', site.dm]] },
+];
 ---
 
-<footer class="footer">
-  <div class="container footer__inner">
-    <div class="footer__brand">
-      <span class="footer__name">Clock Time Chile</span>
-      <span class="eyebrow">Compra · Venta · Consignación</span>
-      <p class="body-sm muted">{site.location} | {site.coverage}</p>
-    </div>
-
-    <nav aria-label="Pie de página">
-      <ul class="footer__links">
-        {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
-      </ul>
-    </nav>
-
-    <a class="footer__ig" href={site.instagram.url} target="_blank" rel="noopener">
-      <Icon name="instagram" size={20} />
-      {site.instagram.handle}
-    </a>
+<footer class="foot wrap">
+  <div class="foot__cols">
+    {
+      cols.map((c) => (
+        <div>
+          <h4>{c.title}</h4>
+          <ul>
+            {c.links.map(([label, href]) => (
+              <li>
+                <a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}>
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
   </div>
-  <div class="container footer__legal">
-    <p class="body-sm muted">© {year} {site.name}. {site.tagline}</p>
-    <p class="body-sm muted">
-      Las marcas mencionadas pertenecen a sus respectivos fabricantes. Clock Time Chile no es distribuidor oficial.
-    </p>
+  <div class="foot__brand"><b>CLOCK TIME</b><span>Chile · Alta relojería</span></div>
+  <div class="foot__meta">
+    <span>Concepción, Biobío · {year}</span>
+    <span>Fotografías: {site.handle}.</span>
+    <span>Más que relojes, confianza.</span>
   </div>
 </footer>
-
-<style>
-  .footer {
-    border-top: 1px solid var(--line);
-    padding-block: var(--space-12) var(--space-8);
-  }
-
-  .footer__inner {
-    display: grid;
-    gap: var(--space-8);
-  }
-
-  @media (min-width: 768px) {
-    .footer__inner {
-      grid-template-columns: 1.4fr 1fr auto;
-      align-items: start;
-    }
-  }
-
-  .footer__brand {
-    display: grid;
-    gap: var(--space-2);
-  }
-
-  .footer__brand p {
-    margin: 0;
-  }
-
-  .footer__name {
-    font: 500 20px/24px var(--font-display);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--gold-text);
-  }
-
-  .footer__links {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--space-2);
-  }
-
-  .footer__links a,
-  .footer__ig {
-    color: var(--ink);
-    text-decoration: none;
-    font-size: 14px;
-  }
-
-  .footer__links a:hover,
-  .footer__ig:hover {
-    color: var(--gold-text);
-  }
-
-  .footer__ig {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--gold-text);
-    font-weight: 600;
-  }
-
-  .footer__legal {
-    margin-top: var(--space-12);
-    padding-top: var(--space-6);
-    border-top: 1px solid var(--line);
-    display: grid;
-    gap: var(--space-1);
-  }
-
-  .footer__legal p {
-    margin: 0;
-  }
-</style>

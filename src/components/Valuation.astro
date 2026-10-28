@@ -1,0 +1,101 @@
+---
+import { site } from '../data/site';
+
+const brandOptions = ['Rolex', 'Omega', 'Panerai', 'Tudor', 'TAG Heuer', 'Breitling', 'Cartier', 'Longines', 'Otra marca'];
+---
+
+<section class="val wrap" id="tasar" aria-labelledby="valTitle">
+  <form class="val__card reveal" id="coupon" novalidate data-dm={site.dm}>
+    <div class="val__l">
+      <div>
+        <span class="eyebrow">Tasación sin costo</span>
+        <h2 id="valTitle">Tasa tu reloj por DM</h2>
+        <p>Completa los datos y armamos el mensaje por ti. Cópialo, ábrelo en Instagram y adjunta tus fotos.</p>
+      </div>
+      <img class="val__mini" src="/img/logo-150.webp" width="96" height="96" alt="" loading="lazy" />
+    </div>
+    <div class="val__r">
+      <div class="field">
+        <label for="f-brand">Marca</label>
+        <select id="f-brand">{brandOptions.map((b) => <option>{b}</option>)}</select>
+      </div>
+      <div class="field">
+        <label for="f-model">Modelo o referencia</label>
+        <input id="f-model" placeholder="Ej. Submariner 116610LN" autocomplete="off" />
+      </div>
+      <div class="pair">
+        <div class="field">
+          <label for="f-year">Año aproximado</label>
+          <input id="f-year" inputmode="numeric" placeholder="Ej. 2018" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="f-set">Qué incluye</label>
+          <select id="f-set">
+            <option>Caja y papeles</option>
+            <option>Solo caja</option>
+            <option>Solo papeles</option>
+            <option>Solo el reloj</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-goal">Qué quieres hacer</label>
+        <select id="f-goal">
+          <option>Quiero venderlo</option>
+          <option>Quiero dejarlo en consignación</option>
+          <option>Solo quiero una tasación</option>
+        </select>
+      </div>
+      <p class="msg" id="msg" aria-live="polite"></p>
+      <button class="pill pill--ink" type="submit">Copiar mensaje y abrir Instagram</button>
+      <p class="status" id="status" role="status"></p>
+    </div>
+  </form>
+</section>
+
+<script>
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const msg = $('msg');
+  const status = $('status');
+  const form = $<HTMLFormElement>('coupon');
+  const v = (id: string) => $<HTMLInputElement>(id).value.trim();
+
+  function compose() {
+    const g = v('f-goal');
+    const intro = g.startsWith('Solo')
+      ? 'Quiero tasar mi reloj.'
+      : g.includes('consignación')
+        ? 'Me interesa dejar mi reloj en consignación.'
+        : 'Quiero vender mi reloj.';
+    msg.textContent = [
+      `Hola Clock Time Chile. ${intro}`,
+      `▪️ Marca: ${v('f-brand')}`,
+      `▪️ Modelo / ref.: ${v('f-model') || 'por confirmar'}`,
+      `▪️ Año: ${v('f-year') || 'no lo sé'}`,
+      `▪️ Incluye: ${v('f-set')}`,
+      'Te adjunto fotos de la esfera, el fondo y los papeles.',
+    ].join('\n');
+    return msg.textContent;
+  }
+
+  form.addEventListener('input', compose);
+  form.addEventListener('change', compose);
+  compose();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = compose();
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = 'Mensaje copiado. Pégalo en el chat de Instagram.';
+    } catch {
+      const r = document.createRange();
+      r.selectNodeContents(msg);
+      const s = getSelection();
+      s?.removeAllRanges();
+      s?.addRange(r);
+      status.textContent = 'Selecciona y copia el mensaje, luego pégalo en Instagram.';
+    }
+    window.open(form.dataset.dm, '_blank', 'noopener');
+  });
+</script>

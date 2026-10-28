@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import '../styles/components.css';
 import { site } from '../data/site';
 
 interface Props {
@@ -8,7 +7,7 @@ interface Props {
   description?: string;
 }
 
-const { title = `${site.name} · Alta relojería en Concepción`, description = site.description } = Astro.props;
+const { title = site.name, description = site.description } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -16,31 +15,24 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <html lang="es-CL">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#0b0b0c" />
+    <link rel="icon" type="image/webp" href="/img/logo-150.webp" />
+    <meta name="theme-color" content="#f6f1e7" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CL" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-
+    <meta property="og:image" content={new URL('/img/hero-radiomir-tall-1280.webp', Astro.site)} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Montserrat:wght@400..800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
     />
-
-    <script is:inline>
-      try {
-        const saved = localStorage.getItem('ct-theme');
-        if (saved === 'marfil' || saved === 'noche') document.documentElement.dataset.theme = saved;
-      } catch {}
-    </script>
+    <script is:inline>document.documentElement.classList.add('js');</script>
   </head>
   <body>
     <slot />

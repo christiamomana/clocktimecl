@@ -1,0 +1,35 @@
+---
+const widths = [480, 800, 1280, 1440];
+const set = (ext: string) => widths.map((w) => `/img/hero-radiomir-tall-${w}.${ext} ${w}w`).join(', ');
+---
+
+<section class="hero" aria-labelledby="heroTitle">
+  <picture class="hero__media">
+    <source type="image/avif" srcset={set('avif')} sizes="100vw" />
+    <img
+      src="/img/hero-radiomir-tall-1280.webp"
+      srcset={set('webp')}
+      sizes="100vw"
+      width="1440"
+      height="1882"
+      alt="Panerai Radiomir S.L.C. en su estuche, con correa de cuero envejecido"
+      fetchpriority="high"
+      decoding="async"
+    />
+  </picture>
+  <div class="hero__text wrap center">
+    <span class="eyebrow">Alta relojería en Concepción</span>
+    <h1 id="heroTitle">El tiempo<br />también <em>inspira</em></h1>
+    <p class="hero__lead">
+      Compramos, vendemos y consignamos relojes de alta gama. Pago inmediato, garantía de 3 meses y envíos a todo Chile.
+    </p>
+    <div class="actions">
+      <a class="pill pill--gold" href="#coleccion">Ver las piezas</a>
+      <a class="pill pill--glass" href="#tasar">Tasar mi reloj</a>
+    </div>
+  </div>
+  <div class="hero__caption wrap">
+    <span>Panerai Radiomir S.L.C. · PAM00425</span>
+    <span>Fotografía de nuestra vitrina</span>
+  </div>
+</section>

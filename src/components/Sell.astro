@@ -1,0 +1,29 @@
+---
+import Pic from './Pic.astro';
+import { site } from '../data/site';
+
+const steps = [
+  { title: 'Envíanos fotos', text: 'Por DM: esfera, fondo y papeles, con marca y referencia.' },
+  { title: 'Tasación profesional', text: 'Revisamos estado, originalidad, caja y documentación.' },
+  { title: 'Oferta clara', text: 'Te proponemos compra directa o un acuerdo de consignación.' },
+  { title: 'Pago al instante', text: 'Si vendes, te pagamos en el momento. Desde cualquier ciudad de Chile.' },
+];
+---
+
+<section class="sell" id="vender" aria-labelledby="sellTitle">
+  <div class="sell__photo" aria-hidden="true"><Pic name="longines-wrist" /></div>
+  <div class="sell__in wrap">
+    <span class="eyebrow reveal">Vende tu reloj</span>
+    <h2 id="sellTitle" class="reveal" style="--i:1">Tu reloj, pagado en el momento</h2>
+    <p class="sell__lead reveal" style="--i:2">
+      Rápido, seguro y sin complicaciones. Si prefieres esperar un mejor precio, lo dejamos en consignación.
+    </p>
+    <ol class="steps">
+      {steps.map((s, i) => <li class="reveal" style={`--i:${i}`}><b>{s.title}</b><span>{s.text}</span></li>)}
+    </ol>
+    <div class="actions reveal">
+      <a class="pill pill--gold" href="#tasar">Pedir una tasación</a>
+      <a class="pill pill--glass" href={site.dm} target="_blank" rel="noopener">Escribir por DM</a>
+    </div>
+  </div>
+</section>
