@@ -1,0 +1,33 @@
+{
+  "marca": "Rolex",
+  "modelo": "Rolex de colección",
+  "referencia": "Oyster Perpetual",
+  "medida": "Acero y oro",
+  "estado": "reservado",
+  "publicado": true,
+  "orden": 70,
+  "imagen": "../../assets/relojes/rolex-de-coleccion/imagen.webp",
+  "encuadre": "50% 72%",
+  "descripcion": "Esta pieza ya está por llegar a un nuevo dueño. Si buscas un Rolex similar, escríbenos y lo buscamos por ti.",
+  "especificaciones": [
+    {
+      "nombre": "Marca",
+      "valor": "Rolex"
+    },
+    {
+      "nombre": "Caja",
+      "valor": "Acero y oro"
+    },
+    {
+      "nombre": "Correa",
+      "valor": "Cuero"
+    },
+    {
+      "nombre": "Estado",
+      "valor": "Reservado"
+    }
+  ],
+  "incluye": [
+    "Reservado"
+  ]
+}

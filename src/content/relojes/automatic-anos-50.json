@@ -1,0 +1,34 @@
+{
+  "marca": "Movado",
+  "modelo": "Automatic años 50",
+  "referencia": "Bumper automático",
+  "medida": "36 mm",
+  "estado": "disponible",
+  "publicado": true,
+  "orden": 60,
+  "imagen": "../../assets/relojes/automatic-anos-50/imagen.webp",
+  "encuadre": "50% 40%",
+  "descripcion": "Caja de oro de 36 mm y el ingenioso movimiento automático de martillo, que daba cuerda rebotando sobre pequeños resortes antes de los rotores de 360°.",
+  "especificaciones": [
+    {
+      "nombre": "Época",
+      "valor": "Años 50"
+    },
+    {
+      "nombre": "Movimiento",
+      "valor": "Automático de martillo"
+    },
+    {
+      "nombre": "Caja",
+      "valor": "Oro, 36 mm"
+    },
+    {
+      "nombre": "Origen",
+      "valor": "Suiza"
+    }
+  ],
+  "incluye": [
+    "Reloj",
+    "Garantía 3 meses"
+  ]
+}
