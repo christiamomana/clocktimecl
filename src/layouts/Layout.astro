@@ -5,9 +5,11 @@ import { site } from '../data/site';
 interface Props {
   title?: string;
   description?: string;
+  /** Páginas internas o de prueba que no deben aparecer en buscadores. */
+  noindex?: boolean;
 }
 
-const { title = site.name, description = site.description } = Astro.props;
+const { title = site.name, description = site.description, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -19,6 +21,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" type="image/webp" href="/img/logo-150.webp" />
     <meta name="theme-color" content="#f6f1e7" />
     <meta property="og:type" content="website" />

@@ -1,0 +1,138 @@
+---
+// Prototipo del probador virtual. La página es estática y liviana: three.js y MediaPipe
+// (≈ 0,7 MB de JS + 13 MB de WASM + 7,8 MB de modelo) se descargan solo al tocar "Abrir cámara".
+import Layout from '../layouts/Layout.astro';
+import { pieces } from '../data/pieces';
+
+const options = pieces
+  .filter((p) => !p.reserved)
+  .map((p) => ({ id: p.img, label: `${p.brand} ${p.name}`, mm: Number(p.size.match(/(\d+(?:[.,]\d+)?)\s*mm/)?.[1]?.replace(',', '.')) || 40 }));
+---
+
+<Layout title="Probador virtual · Clock Time Chile" description="Pruébate un reloj en tu muñeca con la cámara del teléfono." noindex>
+  <main class="tryon">
+    <header class="tryon__head">
+      <a href="/" class="tryon__back">← Volver</a>
+      <p class="tryon__eyebrow">Prototipo</p>
+      <h1>Probador virtual</h1>
+      <p class="tryon__lead">
+        Apunta la cámara a tu muñeca y verás un reloj de referencia con el diámetro de la pieza elegida.
+        Es una maqueta genérica: sirve para hacerte una idea del tamaño, no reemplaza ver el reloj en persona.
+      </p>
+    </header>
+
+    <div class="tryon__controls">
+      <label>
+        Pieza
+        <select id="piece">
+          {options.map((o) => <option value={o.mm} data-id={o.id}>{o.label} · {o.mm} mm</option>)}
+        </select>
+      </label>
+      <button id="start" class="btn" type="button">Abrir cámara</button>
+    </div>
+
+    <div id="stage" class="tryon__stage" hidden>
+      <video id="video" playsinline muted autoplay></video>
+      <canvas id="overlay"></canvas>
+      <div class="tryon__bar">
+        <button id="facing" type="button">Cambiar cámara</button>
+        <button id="flip" type="button">Voltear</button>
+        <button id="close" type="button">Cerrar</button>
+      </div>
+    </div>
+
+    <p id="status" class="tryon__status" role="status" aria-live="polite"></p>
+
+    <p class="tryon__privacy">
+      🔒 El video no sale de tu teléfono: el reconocimiento de la mano se hace en el propio navegador
+      y no grabamos ni enviamos imágenes. Solo se descarga el modelo de seguimiento.
+    </p>
+  </main>
+</Layout>
+
+<script>
+  import type { TryOnSession } from '../lib/probador/engine';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const select = $<HTMLSelectElement>('piece');
+  const startBtn = $<HTMLButtonElement>('start');
+  const stage = $<HTMLDivElement>('stage');
+  const status = $<HTMLParagraphElement>('status');
+  const say = (m: string) => (status.textContent = m);
+
+  // Preselección por URL: /probador?pieza=radiomir-slc
+  const wanted = new URLSearchParams(location.search).get('pieza');
+  const opt = [...select.options].find((o) => o.dataset.id === wanted);
+  if (opt) opt.selected = true;
+
+  let session: TryOnSession | null = null;
+  let facing: 'user' | 'environment' = 'environment';
+
+  startBtn.addEventListener('click', async () => {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      say('Tu navegador no permite usar la cámara aquí. Abre el sitio con https:// en Safari o Chrome.');
+      return;
+    }
+    startBtn.disabled = true;
+    stage.hidden = false;
+    say('Preparando el probador…');
+    try {
+      // Isla cliente: el motor (three.js + MediaPipe) se descarga recién ahora.
+      const { startTryOn } = await import('../lib/probador/engine');
+      session = await startTryOn({
+        container: stage,
+        video: $<HTMLVideoElement>('video'),
+        canvas: $<HTMLCanvasElement>('overlay'),
+        caseMm: Number(select.value),
+        facing,
+        onStatus: say,
+      });
+    } catch (err) {
+      stage.hidden = true;
+      startBtn.disabled = false;
+      const name = (err as DOMException)?.name;
+      say(
+        name === 'NotAllowedError'
+          ? 'No diste permiso para usar la cámara. Puedes activarlo en los ajustes del navegador para este sitio.'
+          : name === 'NotFoundError'
+            ? 'No encontramos una cámara en este dispositivo.'
+            : 'No pudimos iniciar el probador en este dispositivo.',
+      );
+      console.error(err);
+    }
+  });
+
+  select.addEventListener('change', () => session?.setCaseMm(Number(select.value)));
+  $('flip').addEventListener('click', () => session?.flip());
+  $('facing').addEventListener('click', async () => {
+    facing = facing === 'user' ? 'environment' : 'user';
+    await session?.setFacing(facing).catch(() => say('No se pudo cambiar de cámara.'));
+  });
+  $('close').addEventListener('click', () => {
+    session?.stop();
+    session = null;
+    stage.hidden = true;
+    startBtn.disabled = false;
+    say('');
+  });
+</script>
+
+<style>
+  .tryon { max-width: 760px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+  .tryon__back { color: var(--gold-ink); text-decoration: none; font-weight: 600; font-size: 14px; }
+  .tryon__eyebrow { margin: 28px 0 4px; font-size: var(--t-eyebrow); letter-spacing: .18em; text-transform: uppercase; color: var(--gold-ink); font-weight: 700; }
+  h1 { font-family: var(--font-display); font-size: var(--t-h2); line-height: 1.05; margin: 0 0 16px; }
+  .tryon__lead { color: var(--ink-2); margin: 0 0 24px; }
+  .tryon__controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 20px; }
+  .tryon__controls label { min-width: 0; display: grid; gap: 6px; font-size: 14px; font-weight: 600; flex: 1 1 260px; }
+  select { width: 100%; min-width: 0; font: inherit; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+  .btn { font: inherit; font-weight: 700; padding: 13px 26px; border-radius: 999px; border: 0; background: var(--ink); color: var(--ivory); cursor: pointer; }
+  .btn:disabled { opacity: .5; cursor: progress; }
+  .tryon__stage { position: relative; aspect-ratio: 3 / 4; max-height: 78svh; width: 100%; border-radius: var(--radius); overflow: hidden; background: var(--night); }
+  .tryon__stage video, .tryon__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .tryon__stage.is-mirrored video, .tryon__stage.is-mirrored canvas { transform: scaleX(-1); }
+  .tryon__bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; justify-content: center; padding: 12px; background: linear-gradient(transparent, rgb(0 0 0 / .55)); }
+  .tryon__bar button { font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; border: 1px solid rgb(255 255 255 / .35); background: rgb(0 0 0 / .35); color: #fff; cursor: pointer; }
+  .tryon__status { min-height: 1.6em; margin: 14px 0 0; font-weight: 600; }
+  .tryon__privacy { color: var(--ink-2); font-size: 14px; margin-top: 18px; }
+</style>

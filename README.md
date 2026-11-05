@@ -22,6 +22,8 @@ src/
   styles/global.css
   components/      Header (+ menú), Hero, Stories, Collection (+ ficha), Sell, Included, Brands, Story, Faq, Valuation, Footer
   pages/index.astro
+  pages/probador.astro  prototipo de probador virtual (noindex); motor en lib/probador/engine.ts
+docs/investigacion-probador-ar.md  investigación del probador con realidad aumentada
 ```
 
 ## Agregar una pieza
