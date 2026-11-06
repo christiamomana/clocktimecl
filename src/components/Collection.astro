@@ -1,9 +1,21 @@
 ---
-import Pic from './Pic.astro';
-import { pieces } from '../data/pieces';
+import { Picture } from 'astro:assets';
+import { getRelojes, estadoLabel, askLabel } from '../lib/relojes';
 import { site } from '../data/site';
 
-const first = pieces[0];
+const relojes = await getRelojes();
+const first = relojes[0];
+const fichaSizes = '(max-width: 900px) 100vw, 55vw';
+
+// Datos de texto para cambiar la ficha en el navegador; las fotos van en <template> ya optimizadas.
+const fichas = relojes.map(({ data }) => ({
+  marca: data.marca,
+  modelo: data.modelo,
+  descripcion: data.descripcion,
+  especificaciones: data.especificaciones,
+  incluye: data.incluye,
+  ask: askLabel(data.estado),
+}));
 ---
 
 <section class="coll" id="coleccion" aria-labelledby="collTitle">
@@ -15,15 +27,27 @@ const first = pieces[0];
   <div class="rail">
     <div class="rail__track wrap" id="track" role="group" aria-label="Piezas">
       {
-        pieces.map((p, i) => (
+        relojes.map(({ data }, i) => (
           <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>
-            {p.reserved ? <span class="tag tag--sold">Reservado</span> : p.tag && <span class="tag">{p.tag}</span>}
+            {data.estado !== 'disponible' ? (
+              <span class="tag tag--sold">{estadoLabel[data.estado]}</span>
+            ) : (
+              data.etiqueta && <span class="tag">{data.etiqueta}</span>
+            )}
             <div class="tile__art">
-              <Pic name={p.img} sizes="(max-width: 700px) 70vw, 340px" alt={`${p.brand} ${p.name}`} pos={p.pos} />
+              <Picture
+                src={data.imagen}
+                formats={['avif']}
+              fallbackFormat="webp"
+                widths={[400, 720]}
+                sizes="(max-width: 700px) 70vw, 340px"
+                alt={`${data.marca} ${data.modelo}`}
+                style={`object-position:${data.encuadre}`}
+              />
             </div>
-            <small>{p.brand}</small>
-            <b>{p.name}</b>
-            <span class="tnum">{p.ref} · {p.size}</span>
+            <small>{data.marca}</small>
+            <b>{data.modelo}</b>
+            <span class="tnum">{data.referencia} · {data.medida}</span>
           </button>
         ))
       }
@@ -42,39 +66,76 @@ const first = pieces[0];
   </div>
 </section>
 
-<section class="piece" id="ficha" aria-labelledby="pTitle">
-  <div class="piece__grid">
-    <div class="piece__art" id="pArt">
-      <Pic name={first.img} sizes="(max-width: 900px) 100vw, 55vw" alt={`${first.brand} ${first.name}`} pos={first.pos} eager />
-    </div>
-    <div class="piece__txt">
-      <span class="eyebrow" id="pBrand">{first.brand}</span>
-      <h2 id="pTitle">{first.name}</h2>
-      <p class="desc" id="pDesc">{first.desc}</p>
-      <dl class="specs tnum" id="pSpecs">
-        {first.specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
-      </dl>
-      <div class="incl-list" id="pIncl">
-        {first.incl.map((x) => <span>{x}</span>)}
+{
+  first && (
+    <section class="piece" id="ficha" aria-labelledby="pTitle">
+      <div class="piece__grid">
+        <div class="piece__art" id="pArt">
+          <Picture
+            src={first.data.imagen}
+            formats={['avif']}
+              fallbackFormat="webp"
+            widths={[720, 1100]}
+            sizes={fichaSizes}
+            alt={`${first.data.marca} ${first.data.modelo}`}
+            style={`object-position:${first.data.encuadre}`}
+            loading="eager"
+          />
+        </div>
+        <div class="piece__txt">
+          <span class="eyebrow" id="pBrand">{first.data.marca}</span>
+          <h2 id="pTitle">{first.data.modelo}</h2>
+          <p class="desc" id="pDesc">{first.data.descripcion}</p>
+          <dl class="specs tnum" id="pSpecs">
+            {first.data.especificaciones.map((s) => <div><dt>{s.nombre}</dt><dd>{s.valor}</dd></div>)}
+          </dl>
+          <div class="incl-list" id="pIncl">
+            {first.data.incluye.map((x) => <span>{x}</span>)}
+          </div>
+          <div class="actions">
+            <a class="pill pill--gold" id="pAsk" href={site.dm} target="_blank" rel="noopener">
+              {askLabel(first.data.estado)}
+            </a>
+            <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
+          </div>
+          <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
+        </div>
       </div>
-      <div class="actions">
-        <a class="pill pill--gold" id="pAsk" href={site.dm} target="_blank" rel="noopener">
-          {first.reserved ? 'Buscar una pieza similar' : 'Consultar precio'}
-        </a>
-        <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
-      </div>
-      <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
-    </div>
-  </div>
-</section>
+      {
+        relojes.map(({ data }, i) => (
+          <template data-ficha-pic={i}>
+            <Picture
+              src={data.imagen}
+              formats={['avif']}
+              fallbackFormat="webp"
+              widths={[720, 1100]}
+              sizes={fichaSizes}
+              alt={`${data.marca} ${data.modelo}`}
+              style={`object-position:${data.encuadre}`}
+              loading="eager"
+            />
+          </template>
+        ))
+      }
+      <script type="application/json" id="fichas-data" set:html={JSON.stringify(fichas).replace(/</g, '\\u003c')} />
+    </section>
+  )
+}
 
 <script>
-  import { pieces } from '../data/pieces';
-  import { pic } from '../lib/pic';
+  interface Ficha {
+    marca: string;
+    modelo: string;
+    descripcion: string;
+    especificaciones: { nombre: string; valor: string }[];
+    incluye: string[];
+    ask: string;
+  }
 
   const $ = (id: string) => document.getElementById(id)!;
   const track = $('track');
-  const art = $('pArt');
+  const art = document.getElementById('pArt');
+  const fichas: Ficha[] = JSON.parse(document.getElementById('fichas-data')?.textContent || '[]');
 
   const el = (tag: string, text: string) => {
     const n = document.createElement(tag);
@@ -83,23 +144,25 @@ const first = pieces[0];
   };
 
   function show(i: number) {
-    const p = pieces[i];
+    const f = fichas[i];
+    const tpl = document.querySelector<HTMLTemplateElement>(`template[data-ficha-pic="${i}"]`);
+    if (!f || !tpl || !art) return;
     track.querySelectorAll<HTMLElement>('.tile').forEach((t) => t.setAttribute('aria-pressed', String(t.dataset.i === String(i))));
     art.classList.add('is-out');
     setTimeout(() => {
-      art.innerHTML = pic(p.img, '(max-width: 900px) 100vw, 55vw', `${p.brand} ${p.name}`, { pos: p.pos, eager: true });
-      $('pBrand').textContent = p.brand;
-      $('pTitle').textContent = p.name;
-      $('pDesc').textContent = p.desc;
+      art.replaceChildren(tpl.content.cloneNode(true));
+      $('pBrand').textContent = f.marca;
+      $('pTitle').textContent = f.modelo;
+      $('pDesc').textContent = f.descripcion;
       $('pSpecs').replaceChildren(
-        ...p.specs.map(([k, v]) => {
+        ...f.especificaciones.map(({ nombre, valor }) => {
           const d = document.createElement('div');
-          d.append(el('dt', k), el('dd', v));
+          d.append(el('dt', nombre), el('dd', valor));
           return d;
         }),
       );
-      $('pIncl').replaceChildren(...p.incl.map((x) => el('span', x)));
-      $('pAsk').textContent = p.reserved ? 'Buscar una pieza similar' : 'Consultar precio';
+      $('pIncl').replaceChildren(...f.incluye.map((x) => el('span', x)));
+      $('pAsk').textContent = f.ask;
       art.classList.remove('is-out');
     }, 280);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

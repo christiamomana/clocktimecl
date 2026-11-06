@@ -1,4 +1,5 @@
-// Fotos responsivas: AVIF primero, WebP de respaldo, lazy por defecto.
+// Fotos responsivas de las secciones fijas (portada, servicios, historia). Las fotos de los relojes
+// del catálogo las gestiona el administrador y las optimiza Astro (src/assets/relojes).
 // Cada foto existe en /public/img como `<nombre>-<ancho>.{avif,webp}`.
 
 export const IMG: Record<string, number[]> = {

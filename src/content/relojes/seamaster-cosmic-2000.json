@@ -1,0 +1,34 @@
+{
+  "marca": "Omega",
+  "modelo": "Seamaster Cosmic 2000",
+  "referencia": "Vintage",
+  "medida": "41 mm",
+  "estado": "disponible",
+  "publicado": true,
+  "orden": 50,
+  "imagen": "../../assets/relojes/seamaster-cosmic-2000/imagen.webp",
+  "encuadre": "50% 50%",
+  "descripcion": "Un diseño fuera de lo convencional, de caja integrada y bisel giratorio. De los Omega más interesantes y menos conocidos.",
+  "especificaciones": [
+    {
+      "nombre": "Colección",
+      "valor": "Seamaster"
+    },
+    {
+      "nombre": "Movimiento",
+      "valor": "Automático"
+    },
+    {
+      "nombre": "Diámetro",
+      "valor": "41 mm"
+    },
+    {
+      "nombre": "Época",
+      "valor": "Vintage"
+    }
+  ],
+  "incluye": [
+    "Reloj",
+    "Garantía 3 meses"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "marca": "Panerai",
+  "modelo": "Radiomir GMT oro rojo",
+  "referencia": "PAM00598",
+  "medida": "47 mm",
+  "estado": "disponible",
+  "publicado": true,
+  "orden": 20,
+  "etiqueta": "Edición de 200",
+  "imagen": "../../assets/relojes/radiomir-gmt-oro-rojo/imagen.webp",
+  "encuadre": "50% 40%",
+  "descripcion": "Edición limitada a 200 ejemplares, presentada en 2014. Caja de 47 mm en oro rojo de 18 quilates y una espectacular esfera azul soleil.",
+  "especificaciones": [
+    {
+      "nombre": "Referencia",
+      "valor": "PAM00598"
+    },
+    {
+      "nombre": "Calibre",
+      "valor": "P.3001/10, esqueletizado"
+    },
+    {
+      "nombre": "Funciones",
+      "valor": "GMT, reserva 72 h"
+    },
+    {
+      "nombre": "Material",
+      "valor": "Oro rojo 18 k"
+    }
+  ],
+  "incluye": [
+    "Reloj",
+    "Caja original",
+    "Documentación",
+    "Garantía 3 meses"
+  ]
+}
