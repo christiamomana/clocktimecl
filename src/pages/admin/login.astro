@@ -1,0 +1,68 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { adminConfigured, checkPassword, endSession, startSession } from '../../lib/server/auth';
+
+const nextRaw = Astro.url.searchParams.get('next') ?? '/admin';
+const next = nextRaw.startsWith('/admin') && !nextRaw.startsWith('//') ? nextRaw : '/admin';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (form.get('accion') === 'salir') {
+    endSession(Astro.cookies);
+    return Astro.redirect('/admin/login');
+  }
+  if (checkPassword(String(form.get('password') ?? ''))) {
+    startSession(Astro.cookies, Astro.url.protocol === 'https:');
+    return Astro.redirect(next);
+  }
+  await new Promise((r) => setTimeout(r, 800)); // frena intentos repetidos
+  error = 'Contraseña incorrecta.';
+}
+---
+
+<AdminLayout title="Entrar" nav={false}>
+  <div class="login card">
+    <img src="/img/logo-150.webp" width="72" height="72" alt="Clock Time Chile" />
+    <h1>Admin de la vitrina</h1>
+    {
+      adminConfigured() ? (
+        <form method="post" class="form">
+          {error && <p class="notice notice--error">{error}</p>}
+          <label class="field">
+            <span>Contraseña</span>
+            <input type="password" name="password" id="password" autocomplete="current-password" required autofocus />
+          </label>
+          <button class="btn btn--primary" type="submit">Entrar</button>
+        </form>
+      ) : (
+        <div class="notice">
+          <b>Falta configurar el acceso.</b>
+          <p>
+            Define la variable <code>ADMIN_PASSWORD</code> en Vercel (Settings → Environment Variables) y vuelve a
+            desplegar.
+          </p>
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<style>
+  .login {
+    max-width: 380px;
+    width: 100%;
+    margin: 10vh auto 0;
+    display: grid;
+    gap: 18px;
+    justify-items: center;
+    text-align: center;
+  }
+  .login img {
+    border-radius: 999px;
+  }
+  .login .form {
+    width: 100%;
+    text-align: left;
+  }
+</style>

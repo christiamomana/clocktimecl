@@ -1,0 +1,366 @@
+---
+interface Props {
+  title: string;
+  nav?: boolean;
+}
+
+const { title, nav = true } = Astro.props;
+const path = Astro.url.pathname;
+const links = [
+  { href: '/admin', label: 'Relojes' },
+  { href: '/admin/importar', label: 'Importar de Instagram' },
+];
+---
+
+<!doctype html>
+<html lang="es-CL">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{title} · Admin Clock Time</title>
+    <link rel="icon" type="image/webp" href="/img/logo-150.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    {
+      nav && (
+        <header class="top">
+          <a class="brand" href="/admin">
+            <img src="/img/logo-150.webp" width="32" height="32" alt="" />
+            <span>CLOCK TIME</span>
+            <small>Admin</small>
+          </a>
+          <nav aria-label="Admin">
+            {links.map((l) => (
+              <a href={l.href} aria-current={path === l.href ? 'page' : undefined}>
+                {l.label}
+              </a>
+            ))}
+            <a href="/" target="_blank" rel="noopener">Ver sitio ↗</a>
+            <form method="post" action="/admin/login">
+              <input type="hidden" name="accion" value="salir" />
+              <button type="submit" class="link">Salir</button>
+            </form>
+          </nav>
+        </header>
+      )
+    }
+    <main class="page">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #f6f1e7;
+    --panel: #fffdf8;
+    --raised: #ede5d6;
+    --ink: #17140f;
+    --ink-2: #5f574b;
+    --line: #d8c9a6;
+    --gold: #c9a45c;
+    --gold-ink: #7a5c24;
+    --night: #0b0b0c;
+    --ok: #2f7a47;
+    --warn: #8a5a00;
+    --danger: #a8322a;
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-sans: 'Montserrat', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    color-scheme: light;
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  img {
+    display: block;
+    max-width: 100%;
+  }
+  a {
+    color: var(--gold-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(24px, 3vw, 32px);
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+  }
+  p {
+    margin: 0;
+  }
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px max(16px, env(safe-area-inset-right, 0px)) 80px max(16px, env(safe-area-inset-left, 0px));
+    display: grid;
+    gap: 24px;
+  }
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    background: var(--night);
+    color: #f3ede2;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .brand img {
+    border-radius: 999px;
+  }
+  .brand span {
+    font: 700 16px var(--font-display);
+    letter-spacing: 0.14em;
+  }
+  .brand small {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .top nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 18px;
+    font-size: 14px;
+  }
+  .top nav a,
+  .top nav .link {
+    color: #f3ede2;
+    text-decoration: none;
+    opacity: 0.8;
+  }
+  .top nav a:hover,
+  .top nav a[aria-current='page'],
+  .top nav .link:hover {
+    opacity: 1;
+    color: var(--gold);
+  }
+  .top form {
+    display: contents;
+  }
+
+  /* Componentes */
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    font: 600 14px var(--font-sans);
+    text-decoration: none;
+    background: rgba(23, 20, 15, 0.07);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: rgba(23, 20, 15, 0.13);
+  }
+  .btn--primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn--primary:hover {
+    background: var(--gold-ink);
+  }
+  .btn--gold {
+    background: var(--gold);
+    color: var(--night);
+  }
+  .btn--danger {
+    background: transparent;
+    color: var(--danger);
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+  .btn--sm {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .btn[disabled] {
+    opacity: 0.5;
+    cursor: wait;
+  }
+  .link {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    color: var(--gold-ink);
+    text-decoration: underline;
+  }
+  .muted {
+    color: var(--ink-2);
+  }
+  .small {
+    font-size: 13px;
+  }
+  .notice {
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #fff6dc;
+    border: 1px solid #ecd28f;
+    display: grid;
+    gap: 6px;
+  }
+  .notice--ok {
+    background: #e9f4ec;
+    border-color: #a9d3b5;
+  }
+  .notice--error {
+    background: #fbeceb;
+    border-color: #e6aaa5;
+  }
+  .notice ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--raised);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .chip--disponible {
+    background: #e9f4ec;
+    color: var(--ok);
+  }
+  .chip--reservado {
+    background: #fff1d1;
+    color: var(--warn);
+  }
+  .chip--vendido {
+    background: #f3e3e1;
+    color: var(--danger);
+  }
+  .chip--borrador {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  /* Formularios */
+  .form {
+    display: grid;
+    gap: 16px;
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 16px;
+  }
+  .field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .field > span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .field small {
+    color: var(--ink-2);
+    font-size: 12px;
+  }
+  input[type='text'],
+  input[type='number'],
+  input[type='password'],
+  input[type='url'],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 10px 12px;
+    font: 500 15px var(--font-sans);
+    color: var(--ink);
+  }
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.25);
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .check input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--ink);
+  }
+</style>

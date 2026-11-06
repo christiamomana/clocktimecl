@@ -14,46 +14,53 @@ npm run preview
 ## Estructura
 
 ```
-keystatic.config.ts      campos del administrador de relojes
-public/img/              fotos fijas de la página (portada, servicios, historia) y logo
 src/
-  content/relojes/*.json un archivo por reloj (lo escribe el administrador)
-  assets/relojes/        foto de cada reloj (Astro genera AVIF/WebP al construir)
-  content.config.ts      esquema de la colección de relojes
-  lib/relojes.ts         relojes publicados en orden
-  data/site.ts           Instagram, DM, marcas
-  lib/pic.ts             <picture> responsivo de las fotos fijas
-  styles/global.css
-  components/      Header (+ menú), Hero, Stories, Collection (+ ficha), Sell, Included, Brands, Story, Faq, Valuation, Footer
-  pages/index.astro
+  pages/index.astro            vitrina (lee los relojes de la base en cada visita, caché de 1 minuto)
+  pages/admin/                 admin: login, lista, edición, importar de Instagram
+  pages/api/admin/             API del admin (fotos, importar, lista para comparar con Instagram)
+  pages/fotos/[file].ts        sirve las fotos guardadas en la base (/fotos/12-m.webp)
+  lib/relojes.ts               tipos y validación de un reloj
+  lib/instagram.ts             lee la ficha de una publicación (⌚ ▪️ ✔️)
+  lib/seed.ts                  vitrina inicial (7 relojes, fotos en public/img)
+  lib/server/                  base de datos, fotos (sharp → WebP), login, importación
+  data/claude-sync.ts          instrucciones para sincronizar con Claude in Chrome
+  components/, styles/         secciones y estilos de la página
+public/img/                    fotos fijas de la página y de la vitrina inicial
+tests/                         pruebas del lector de fichas (npm test)
 ```
 
-## Administrador de relojes
+## Administrador (`/admin`)
 
-Los relojes se gestionan en **`/keystatic`** (Keystatic): agregar, editar, ordenar, ocultar, marcar como reservado o vendido, y subir la foto. Cada reloj queda como un archivo en `src/content/relojes/` y su foto en `src/assets/relojes/<id>/`; Astro la optimiza al construir el sitio.
+- Entra con la contraseña de `ADMIN_PASSWORD`.
+- **Relojes:** crear, editar, ocultar o publicar, marcar disponible / reservado / vendido, precio (vacío = "Consultar precio"), orden, etiqueta, especificaciones y qué incluye.
+- **Fotos:** varias por reloj, se suben desde el celular o el computador (se achican en el navegador y se guardan como WebP en tres tamaños). La primera es la portada; en la página se ven como galería en la ficha.
+- **Importar de Instagram:** pega el link y el texto de una publicación, más sus fotos. Se lee la ficha y se crea un reloj **sin publicar** para revisar.
+- **Sincronizar con Claude:** en *Importar de Instagram* hay instrucciones para copiar en la extensión **Claude in Chrome**. Con tu Instagram abierto, Claude compara tus publicaciones con el admin e importa como borrador las que falten.
+- Los cambios se ven en la página en cerca de un minuto, sin redeploy.
 
-Campos: marca, modelo, referencia, medida o material, estado (disponible / reservado / vendido), mostrar en la página, orden en el carrusel, etiqueta, foto, encuadre de la foto, descripción, especificaciones (hasta 6; la ficha muestra 4) y qué incluye.
+### Configuración en Vercel
+
+1. **Base de datos:** *Storage → Neon* y conéctala al proyecto. Crea `DATABASE_URL`; las tablas se crean solas.
+2. **Variables** (*Settings → Environment Variables*): `ADMIN_PASSWORD` y, opcional, `ADMIN_API_TOKEN` (ver `.env.example`).
+3. **Redeploy.** Entra a `/admin`: con la base vacía aparece el botón *Cargar los 7 relojes actuales*.
+
+Sin `DATABASE_URL` la página muestra la vitrina inicial y el admin avisa que falta la base.
+
+### API para scripts o Claude Code
+
+Con `Authorization: Bearer $ADMIN_API_TOKEN`:
+
+- `GET /api/admin/relojes`: lista con `instagram_url` de cada reloj.
+- `POST /api/admin/importar` con JSON `{ "instagram_url", "caption", "foto_urls": [] }`: crea un borrador. Responde 409 si ya existe.
 
 ### En local
 
 ```bash
-npm run dev
-# abre http://127.0.0.1:4321/keystatic
+cp .env.example .env   # completa DATABASE_URL (cualquier Postgres) y ADMIN_PASSWORD
+npm run dev            # http://localhost:4321 y /admin
+npm test               # pruebas del lector de fichas
 ```
-
-Los cambios se escriben directo en los archivos del repo; haz commit y push como de costumbre.
-
-### En producción (modo GitHub)
-
-En producción el administrador guarda cada cambio como un commit en GitHub, y solo pueden entrar personas con permiso de escritura en el repositorio. Al hacer push, el hosting vuelve a construir el sitio y el cambio queda publicado en uno o dos minutos.
-
-1. Crea la rama `main` (el repo hoy solo tiene la rama de desarrollo) y apunta el hosting a ella.
-2. Corre `PUBLIC_KEYSTATIC_STORAGE=github npm run dev`, abre `/keystatic` y sigue el asistente: crea la GitHub App y guarda las claves en `.env` (no se sube al repo). Instala la app en `christiamomana/clocktimecl`.
-3. En el hosting, define las variables de `.env.example` con esos valores, y en la GitHub App agrega la URL de callback de tu dominio: `https://TU-DOMINIO/api/keystatic/github/oauth/callback`.
-4. Con `PUBLIC_KEYSTATIC_STORAGE=github` el build incluye el administrador y usa el adaptador `@astrojs/vercel` (las páginas siguen siendo estáticas; solo `/keystatic` y `/api/keystatic` corren como función). En Vercel: importa el repo, rama de producción `main`, y define las variables en *Settings → Environment Variables*.
-
-Sin esa variable, `npm run build` genera un sitio 100 % estático y sin administrador: el modo local nunca se publica.
 
 ## Pendiente
 
-- `site` en `astro.config.mjs` está como `https://clocktime.cl`; ajústalo al dominio real.
+- Cambiar `site` en `astro.config.mjs` si se usa un dominio propio.
