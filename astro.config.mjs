@@ -1,17 +1,12 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
 import vercel from '@astrojs/vercel';
-import keystatic from '@keystatic/astro';
 
-// El administrador (/keystatic) se activa en desarrollo, o en producción con PUBLIC_KEYSTATIC_STORAGE=github.
-// Sin él, el sitio se construye 100 % estático y no necesita servidor (nunca se publica el modo local).
-const isDev = process.argv.includes('dev');
-const adminEnabled = isDev || process.env.PUBLIC_KEYSTATIC_STORAGE === 'github';
-
+// Sitio servido por Vercel: la vitrina y el admin (/admin) leen de Postgres en cada visita,
+// así los cambios se ven sin volver a desplegar. Las imágenes fijas siguen en /public/img.
 export default defineConfig({
-  site: 'https://clocktime.cl',
+  site: 'https://clocktimecl.vercel.app',
+  output: 'server',
+  adapter: vercel(),
   build: { inlineStylesheets: 'always' },
-  integrations: adminEnabled ? [react(), keystatic()] : [],
-  ...(adminEnabled && !isDev ? { adapter: vercel() } : {}),
 });

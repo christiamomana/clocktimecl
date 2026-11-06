@@ -1,8 +1,11 @@
 ---
 import { site } from '../data/site';
-import { getRelojes } from '../lib/relojes';
 
-const marcas = [...new Set((await getRelojes()).map((r) => r.data.marca))].slice(0, 5);
+interface Props {
+  marcas: string[];
+}
+
+const { marcas } = Astro.props;
 
 const year = new Date().getFullYear();
 const cols = [

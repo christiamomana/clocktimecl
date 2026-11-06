@@ -1,21 +1,40 @@
 ---
-import { Picture } from 'astro:assets';
-import { getRelojes, estadoLabel, askLabel } from '../lib/relojes';
+import { askLabel, estadoLabel, formatCLP, fotoSrcset, type FotoView, type Reloj } from '../lib/relojes';
 import { site } from '../data/site';
 
-const relojes = await getRelojes();
+interface Props {
+  relojes: Reloj[];
+}
+
+const { relojes } = Astro.props;
 const first = relojes[0];
+const precioLabel = (r: Reloj) => (r.precio ? formatCLP(r.precio) : '');
 const fichaSizes = '(max-width: 900px) 100vw, 55vw';
 
-// Datos de texto para cambiar la ficha en el navegador; las fotos van en <template> ya optimizadas.
-const fichas = relojes.map(({ data }) => ({
-  marca: data.marca,
-  modelo: data.modelo,
-  descripcion: data.descripcion,
-  especificaciones: data.especificaciones,
-  incluye: data.incluye,
-  ask: askLabel(data.estado),
+// Datos para cambiar la ficha en el navegador sin recargar.
+const fichas = relojes.map((r) => ({
+  marca: r.marca,
+  modelo: r.modelo,
+  descripcion: r.descripcion,
+  especificaciones: r.especificaciones,
+  incluye: r.incluye,
+  ask: askLabel(r),
+  precio: precioLabel(r),
+  encuadre: r.encuadre,
+  fotos: r.fotos.map((f) => ({ srcset: fotoSrcset(f), src: f.m, ancho: f.ancho, alto: f.alto })),
 }));
+
+const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = false) => ({
+  src: f.m,
+  srcset: fotoSrcset(f),
+  sizes,
+  width: f.ancho,
+  height: f.alto,
+  alt,
+  loading: eager ? ('eager' as const) : ('lazy' as const),
+  decoding: 'async' as const,
+  style: `object-position:${encuadre}`,
+});
 ---
 
 <section class="coll" id="coleccion" aria-labelledby="collTitle">
@@ -24,103 +43,153 @@ const fichas = relojes.map(({ data }) => ({
     <h2 id="collTitle">La selección</h2>
     <p>Piezas reales de nuestra vitrina, con su caja y sus papeles. Toca una para ver su ficha.</p>
   </div>
-  <div class="rail">
-    <div class="rail__track wrap" id="track" role="group" aria-label="Piezas">
-      {
-        relojes.map(({ data }, i) => (
-          <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>
-            {data.estado !== 'disponible' ? (
-              <span class="tag tag--sold">{estadoLabel[data.estado]}</span>
-            ) : (
-              data.etiqueta && <span class="tag">{data.etiqueta}</span>
-            )}
-            <div class="tile__art">
-              <Picture
-                src={data.imagen}
-                formats={['avif']}
-              fallbackFormat="webp"
-                widths={[400, 720]}
-                sizes="(max-width: 700px) 70vw, 340px"
-                alt={`${data.marca} ${data.modelo}`}
-                style={`object-position:${data.encuadre}`}
-              />
-            </div>
-            <small>{data.marca}</small>
-            <b>{data.modelo}</b>
-            <span class="tnum">{data.referencia} · {data.medida}</span>
-          </button>
-        ))
-      }
-    </div>
-    <div class="rail__nav wrap">
-      <div class="rail__prog" aria-hidden="true"><i id="prog"></i></div>
-      <div class="rail__btns">
-        <button class="circle" id="prev" aria-label="Anterior">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
-        </button>
-        <button class="circle" id="next" aria-label="Siguiente">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
-        </button>
+  {
+    relojes.length === 0 ? (
+      <p class="wrap center coll__empty">
+        Estamos preparando nuevas piezas. Escríbenos y te contamos qué tenemos disponible.
+      </p>
+    ) : (
+      <div class="rail">
+        <div class="rail__track wrap" id="track" role="group" aria-label="Piezas">
+          {relojes.map((r, i) => (
+            <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>
+              {r.estado !== 'disponible' ? (
+                <span class="tag tag--sold">{estadoLabel[r.estado]}</span>
+              ) : (
+                r.etiqueta && <span class="tag">{r.etiqueta}</span>
+              )}
+              <div class="tile__art">
+                <img {...img(r.fotos[0], '(max-width: 700px) 70vw, 340px', `${r.marca} ${r.modelo}`, r.encuadre)} />
+              </div>
+              <small>{r.marca}</small>
+              <b>{r.modelo}</b>
+              <span class="tnum">{[r.referencia, r.medida].filter(Boolean).join(' · ')}</span>
+            </button>
+          ))}
+        </div>
+        <div class="rail__nav wrap">
+          <div class="rail__prog" aria-hidden="true"><i id="prog" /></div>
+          <div class="rail__btns">
+            <button class="circle" id="prev" aria-label="Anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+            </button>
+            <button class="circle" id="next" aria-label="Siguiente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    )
+  }
 </section>
 
 {
   first && (
     <section class="piece" id="ficha" aria-labelledby="pTitle">
       <div class="piece__grid">
-        <div class="piece__art" id="pArt">
-          <Picture
-            src={first.data.imagen}
-            formats={['avif']}
-              fallbackFormat="webp"
-            widths={[720, 1100]}
-            sizes={fichaSizes}
-            alt={`${first.data.marca} ${first.data.modelo}`}
-            style={`object-position:${first.data.encuadre}`}
-            loading="eager"
-          />
+        <div class="piece__art">
+          <div class="piece__img" id="pArt">
+            <img {...img(first.fotos[0], fichaSizes, `${first.marca} ${first.modelo}`, first.encuadre, true)} />
+          </div>
+          <div class="piece__thumbs" id="pThumbs" hidden={first.fotos.length < 2}>
+            {first.fotos.map((f, i) => (
+              <button type="button" data-f={i} aria-pressed={i === 0 ? 'true' : 'false'} aria-label={`Foto ${i + 1}`}>
+                <img src={f.s} alt="" loading="lazy" decoding="async" />
+              </button>
+            ))}
+          </div>
         </div>
         <div class="piece__txt">
-          <span class="eyebrow" id="pBrand">{first.data.marca}</span>
-          <h2 id="pTitle">{first.data.modelo}</h2>
-          <p class="desc" id="pDesc">{first.data.descripcion}</p>
+          <span class="eyebrow" id="pBrand">{first.marca}</span>
+          <h2 id="pTitle">{first.modelo}</h2>
+          <p class="desc" id="pDesc">{first.descripcion}</p>
           <dl class="specs tnum" id="pSpecs">
-            {first.data.especificaciones.map((s) => <div><dt>{s.nombre}</dt><dd>{s.valor}</dd></div>)}
+            {first.especificaciones.slice(0, 4).map((s) => (
+              <div>
+                <dt>{s.nombre}</dt>
+                <dd>{s.valor}</dd>
+              </div>
+            ))}
           </dl>
           <div class="incl-list" id="pIncl">
-            {first.data.incluye.map((x) => <span>{x}</span>)}
+            {first.incluye.map((x) => <span>{x}</span>)}
           </div>
+          <p class="piece__price tnum" id="pPrice" hidden={!first.precio}>{precioLabel(first)}</p>
           <div class="actions">
             <a class="pill pill--gold" id="pAsk" href={site.dm} target="_blank" rel="noopener">
-              {askLabel(first.data.estado)}
+              {askLabel(first)}
             </a>
             <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
           </div>
           <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
         </div>
       </div>
-      {
-        relojes.map(({ data }, i) => (
-          <template data-ficha-pic={i}>
-            <Picture
-              src={data.imagen}
-              formats={['avif']}
-              fallbackFormat="webp"
-              widths={[720, 1100]}
-              sizes={fichaSizes}
-              alt={`${data.marca} ${data.modelo}`}
-              style={`object-position:${data.encuadre}`}
-              loading="eager"
-            />
-          </template>
-        ))
-      }
       <script type="application/json" id="fichas-data" set:html={JSON.stringify(fichas).replace(/</g, '\\u003c')} />
     </section>
   )
 }
+
+<style>
+  .coll__empty {
+    color: var(--ink-2);
+    font-size: var(--t-lead);
+  }
+
+  .piece__img {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.4s var(--ease), transform 1s var(--ease);
+  }
+
+  .piece__art.is-out .piece__img {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+
+  .piece__thumbs {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    right: 16px;
+    z-index: 1;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .piece__thumbs :global(button) {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.7;
+    box-shadow: 0 0 0 1px rgba(243, 237, 226, 0.3);
+    transition: opacity 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+
+  .piece__thumbs :global(button[aria-pressed='true']),
+  .piece__thumbs :global(button:hover) {
+    opacity: 1;
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+
+  .piece__thumbs :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .piece__price {
+    font-size: clamp(24px, 2.4vw, 32px);
+    font-weight: 700;
+    color: var(--gold-night);
+  }
+</style>
 
 <script>
   interface Ficha {
@@ -130,12 +199,17 @@ const fichas = relojes.map(({ data }) => ({
     especificaciones: { nombre: string; valor: string }[];
     incluye: string[];
     ask: string;
+    precio: string;
+    encuadre: string;
+    fotos: { srcset: string; src: string; ancho: number; alto: number }[];
   }
 
-  const $ = (id: string) => document.getElementById(id)!;
+  const $ = (id: string) => document.getElementById(id);
   const track = $('track');
-  const art = document.getElementById('pArt');
-  const fichas: Ficha[] = JSON.parse(document.getElementById('fichas-data')?.textContent || '[]');
+  const art = $('pArt');
+  const thumbs = $('pThumbs');
+  const fichas: Ficha[] = JSON.parse($('fichas-data')?.textContent || '[]');
+  let current = 0;
 
   const el = (tag: string, text: string) => {
     const n = document.createElement(tag);
@@ -143,45 +217,85 @@ const fichas = relojes.map(({ data }) => ({
     return n;
   };
 
+  function photo(f: Ficha, i: number) {
+    const p = f.fotos[i];
+    const img = document.createElement('img');
+    Object.assign(img, { src: p.src, srcset: p.srcset, width: p.ancho, height: p.alto, alt: `${f.marca} ${f.modelo}`, decoding: 'async' });
+    img.sizes = '(max-width: 900px) 100vw, 55vw';
+    img.style.objectPosition = f.encuadre;
+    art?.replaceChildren(img);
+    thumbs?.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === String(i))));
+  }
+
+  function renderThumbs(f: Ficha) {
+    if (!thumbs) return;
+    thumbs.hidden = f.fotos.length < 2;
+    thumbs.replaceChildren(
+      ...f.fotos.map((p, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.f = String(i);
+        b.setAttribute('aria-label', `Foto ${i + 1}`);
+        b.setAttribute('aria-pressed', String(i === 0));
+        const img = document.createElement('img');
+        img.src = p.src;
+        img.alt = '';
+        b.append(img);
+        return b;
+      }),
+    );
+  }
+
   function show(i: number) {
     const f = fichas[i];
-    const tpl = document.querySelector<HTMLTemplateElement>(`template[data-ficha-pic="${i}"]`);
-    if (!f || !tpl || !art) return;
+    if (!f || !art || !track) return;
+    current = i;
     track.querySelectorAll<HTMLElement>('.tile').forEach((t) => t.setAttribute('aria-pressed', String(t.dataset.i === String(i))));
-    art.classList.add('is-out');
+    const box = art.parentElement!;
+    box.classList.add('is-out');
     setTimeout(() => {
-      art.replaceChildren(tpl.content.cloneNode(true));
-      $('pBrand').textContent = f.marca;
-      $('pTitle').textContent = f.modelo;
-      $('pDesc').textContent = f.descripcion;
-      $('pSpecs').replaceChildren(
-        ...f.especificaciones.map(({ nombre, valor }) => {
+      photo(f, 0);
+      renderThumbs(f);
+      $('pBrand')!.textContent = f.marca;
+      $('pTitle')!.textContent = f.modelo;
+      $('pDesc')!.textContent = f.descripcion;
+      $('pSpecs')!.replaceChildren(
+        ...f.especificaciones.slice(0, 4).map(({ nombre, valor }) => {
           const d = document.createElement('div');
           d.append(el('dt', nombre), el('dd', valor));
           return d;
         }),
       );
-      $('pIncl').replaceChildren(...f.incluye.map((x) => el('span', x)));
-      $('pAsk').textContent = f.ask;
-      art.classList.remove('is-out');
+      $('pIncl')!.replaceChildren(...f.incluye.map((x) => el('span', x)));
+      const price = $('pPrice')!;
+      price.textContent = f.precio;
+      price.hidden = !f.precio;
+      $('pAsk')!.textContent = f.ask;
+      box.classList.remove('is-out');
     }, 280);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    $('ficha').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+    $('ficha')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
   }
 
-  track.addEventListener('click', (e) => {
-    const t = (e.target as HTMLElement).closest<HTMLElement>('.tile');
-    if (t) show(Number(t.dataset.i));
+  thumbs?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-f]');
+    if (b) photo(fichas[current], Number(b.dataset.f));
   });
 
-  const prog = $('prog');
-  const upd = () => {
-    const m = track.scrollWidth - track.clientWidth;
-    prog.style.transform = `scaleX(${m > 0 ? 0.2 + (0.8 * track.scrollLeft) / m : 1})`;
-  };
-  track.addEventListener('scroll', upd, { passive: true });
-  addEventListener('resize', upd);
-  upd();
-  $('prev').addEventListener('click', () => track.scrollBy({ left: -360, behavior: 'smooth' }));
-  $('next').addEventListener('click', () => track.scrollBy({ left: 360, behavior: 'smooth' }));
+  if (track) {
+    track.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('.tile');
+      if (t) show(Number(t.dataset.i));
+    });
+    const prog = $('prog')!;
+    const upd = () => {
+      const m = track.scrollWidth - track.clientWidth;
+      prog.style.transform = `scaleX(${m > 0 ? 0.2 + (0.8 * track.scrollLeft) / m : 1})`;
+    };
+    track.addEventListener('scroll', upd, { passive: true });
+    addEventListener('resize', upd);
+    upd();
+    $('prev')?.addEventListener('click', () => track.scrollBy({ left: -360, behavior: 'smooth' }));
+    $('next')?.addEventListener('click', () => track.scrollBy({ left: 360, behavior: 'smooth' }));
+  }
 </script>

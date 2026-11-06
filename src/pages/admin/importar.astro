@@ -1,0 +1,171 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { hasDatabase } from '../../lib/server/db';
+import { listRelojes } from '../../lib/server/relojes';
+import { claudeSyncPrompt } from '../../data/claude-sync';
+
+if (!hasDatabase()) return Astro.redirect('/admin');
+const importados = (await listRelojes()).filter((r) => r.instagram_url);
+---
+
+<AdminLayout title="Importar de Instagram">
+  <div class="head">
+    <div>
+      <h1>Importar de Instagram</h1>
+      <p class="muted">Crea un reloj <b>sin publicar</b> a partir de una publicación. Revisa los datos y publícalo.</p>
+    </div>
+  </div>
+
+  <form class="card form" id="import-form" method="post" action="/api/admin/importar" enctype="multipart/form-data">
+    <label class="field">
+      <span>Link de la publicación *</span>
+      <input type="url" name="instagram_url" id="instagram_url" required placeholder="https://www.instagram.com/p/…" />
+      <small id="dup" role="status"></small>
+    </label>
+
+    <label class="field">
+      <span>Texto de la publicación *</span>
+      <textarea name="caption" id="caption" rows="12" required placeholder={'⌚ PANERAI RADIOMIR S.L.C. – PAM00425\n\nSu emblemática caja de acero…\n\n▪️ Calibre P.3000\n▪️ Diámetro 47 mm\n\n✔️ Reloj\n✔️ Caja original'}></textarea>
+      <small>Cópialo completo desde Instagram. Se leen la línea con ⌚, las ▪️ (especificaciones) y los ✔️ (qué incluye).</small>
+    </label>
+
+    <div class="grid2">
+      <label class="field">
+        <span>Fotos</span>
+        <input type="file" name="fotos" id="fotos" accept="image/*" multiple />
+        <small>Guárdalas desde Instagram o súbelas desde el celular. La primera será la portada.</small>
+      </label>
+      <label class="field">
+        <span>O URLs de las fotos</span>
+        <textarea name="foto_urls" id="foto_urls" rows="3" placeholder="https://… (una por línea)"></textarea>
+      </label>
+    </div>
+
+    <div class="row">
+      <button class="btn btn--primary" type="submit" id="import-btn">Importar como borrador</button>
+      <span class="small muted" id="import-status" role="status"></span>
+    </div>
+  </form>
+
+  <section class="card claude">
+    <h2>Sincronizar con Claude</h2>
+    <p class="muted small">
+      Con la extensión <b>Claude in Chrome</b>, y con Instagram y este admin abiertos en tu navegador, copia estas instrucciones y
+      pégaselas a Claude. Revisará tu Instagram y subirá como borrador los relojes que falten.
+    </p>
+    <pre id="claude-prompt">{claudeSyncPrompt(Astro.url.origin)}</pre>
+    <div class="row">
+      <button class="btn btn--sm" type="button" id="copy-prompt">Copiar instrucciones</button>
+      <span class="small muted" id="copy-status" role="status"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Ya importadas ({importados.length})</h2>
+    {
+      importados.length === 0 ? (
+        <p class="muted small">Todavía no hay relojes con link de Instagram.</p>
+      ) : (
+        <ul class="done" id="importados">
+          {importados.map((r) => (
+            <li>
+              <a href={`/admin/relojes/${r.id}`}>{r.marca} {r.modelo}</a>
+              <a class="small muted" href={r.instagram_url!} target="_blank" rel="noopener" data-ig={r.instagram_url}>
+                {r.instagram_url!.replace('https://www.instagram.com', '')}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</AdminLayout>
+
+<style>
+  .done {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 6px;
+  }
+  .claude {
+    display: grid;
+    gap: 12px;
+  }
+  .claude pre {
+    margin: 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre-wrap;
+  }
+  .done li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+</style>
+
+<script>
+  import { shrink } from '../../lib/client/upload';
+  import { canonicalInstagramUrl } from '../../lib/relojes';
+
+  const form = document.getElementById('import-form') as HTMLFormElement;
+  const btn = document.getElementById('import-btn') as HTMLButtonElement;
+  const status = document.getElementById('import-status')!;
+  const dup = document.getElementById('dup')!;
+  const igInput = document.getElementById('instagram_url') as HTMLInputElement;
+  const known = new Set([...document.querySelectorAll<HTMLElement>('[data-ig]')].map((a) => a.dataset.ig));
+
+  igInput.addEventListener('input', () => {
+    const url = canonicalInstagramUrl(igInput.value);
+    dup.textContent = url && known.has(url) ? 'Esta publicación ya está importada.' : '';
+  });
+
+  document.getElementById('copy-prompt')?.addEventListener('click', async () => {
+    const text = document.getElementById('claude-prompt')!.textContent ?? '';
+    const out = document.getElementById('copy-status')!;
+    try {
+      await navigator.clipboard.writeText(text);
+      out.textContent = 'Copiado.';
+    } catch {
+      getSelection()?.selectAllChildren(document.getElementById('claude-prompt')!);
+      out.textContent = 'Selecciona el texto y cópialo.';
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    try {
+      const data = new FormData(form);
+      const files = data.getAll('fotos').filter((f): f is File => f instanceof File && f.size > 0);
+      data.delete('fotos');
+      for (const [i, f] of files.entries()) {
+        status.textContent = `Preparando foto ${i + 1} de ${files.length}…`;
+        data.append('fotos', await shrink(f), `foto-${i + 1}.jpg`);
+      }
+      status.textContent = 'Importando…';
+      const res = await fetch(form.action, { method: 'POST', body: data });
+      const body = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+      if (!res.ok) {
+        if (body.existing_id) {
+          location.href = `/admin/relojes/${body.existing_id}?ok=${encodeURIComponent('Esa publicación ya estaba importada.')}`;
+          return;
+        }
+        throw new Error(body.error);
+      }
+      const q = new URLSearchParams({ ok: 'Importado como borrador. Revisa los datos y publícalo.' });
+      if (body.avisos?.length) q.set('avisos', JSON.stringify(body.avisos));
+      location.href = `${body.admin_url}?${q}`;
+    } catch (err) {
+      status.textContent = (err as Error).message;
+      btn.disabled = false;
+    }
+  });
+</script>

@@ -14,7 +14,7 @@ export const IMG: Record<string, number[]> = {
   correa: [400, 720],
 };
 
-const DIM: Record<string, [number, number]> = {
+export const DIM: Record<string, [number, number]> = {
   'radiomir-slc': [1296, 1788],
   'radiomir-gmt': [1440, 1267],
   'longines-moonphase': [1440, 1922],

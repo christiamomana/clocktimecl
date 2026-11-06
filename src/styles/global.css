@@ -175,8 +175,7 @@ button { font: inherit; color: inherit; }
 .piece { background: var(--night); color: var(--on-night); }
 .piece__grid { display: grid; grid-template-columns: 1.1fr 1fr; min-height: min(860px, 100svh); }
 .piece__art { position: relative; overflow: hidden; background: var(--night); min-height: 100%; }
-.piece__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .4s var(--ease), transform 1s var(--ease); }
-.piece__art.is-out img { opacity: 0; transform: scale(1.04); }
+.piece__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .piece__txt { display: flex; flex-direction: column; justify-content: center; gap: 26px; padding-block: clamp(48px, 7vw, 120px); padding-inline: clamp(24px, 6vw, 110px); }
 .piece__txt .eyebrow { color: var(--gold-night); margin: 0; }
 .piece__txt h2 { font-size: clamp(34px, 3.8vw, 58px); }

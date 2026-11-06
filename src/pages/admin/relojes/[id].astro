@@ -1,0 +1,315 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { hasDatabase } from '../../../lib/server/db';
+import { downloadFoto, processFoto } from '../../../lib/server/fotos';
+import { addFoto, createReloj, deleteFoto, deleteReloj, getReloj, setPortada, updateReloj } from '../../../lib/server/relojes';
+import { ENCUADRES, ESTADOS, estadoLabel, parseRelojInput, type Reloj } from '../../../lib/relojes';
+
+if (!hasDatabase()) return Astro.redirect('/admin');
+
+const isNew = Astro.params.id === 'nuevo';
+const id = isNew ? null : Number(Astro.params.id);
+if (!isNew && !Number.isInteger(id)) return Astro.redirect('/admin');
+
+const empty: Reloj = {
+  id: null, marca: '', modelo: '', referencia: '', medida: '', estado: 'disponible', publicado: false, orden: 100,
+  etiqueta: null, precio: null, encuadre: '50% 50%', descripcion: '', especificaciones: [], incluye: [], instagram_url: null, fotos: [],
+};
+
+let reloj = isNew ? empty : await getReloj(id!);
+if (!reloj) return Astro.redirect('/admin');
+
+let errors: string[] = [];
+const ok = Astro.url.searchParams.get('ok');
+let avisos: string[] = [];
+try {
+  avisos = JSON.parse(Astro.url.searchParams.get('avisos') ?? '[]');
+} catch {}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = String(form.get('accion'));
+  const back = (text: string) => Astro.redirect(`/admin/relojes/${id}?ok=${encodeURIComponent(text)}`);
+
+  try {
+    if (accion === 'guardar') {
+      const raw = Object.fromEntries(form);
+      const parsed = parseRelojInput({
+        ...raw,
+        publicado: form.get('publicado') === 'on',
+        especificaciones: String(raw.especificaciones ?? '').split('\n'),
+        incluye: String(raw.incluye ?? ''),
+      });
+      if (!parsed.data) {
+        errors = parsed.errors;
+      } else {
+        const data = parsed.data;
+        if (data.publicado && !reloj.fotos.length) {
+          data.publicado = false;
+          avisos = ['Se guardó sin publicar: agrega al menos una foto para poder mostrarlo en la página.'];
+        }
+        if (isNew) {
+          const newId = await createReloj(data);
+          return Astro.redirect(`/admin/relojes/${newId}?ok=${encodeURIComponent('Reloj creado. Ahora agrega sus fotos.')}`);
+        }
+        await updateReloj(id!, data);
+        if (!avisos.length) return back('Cambios guardados. Se verán en la página en cerca de un minuto.');
+        reloj = (await getReloj(id!))!;
+      }
+    } else if (!isNew && accion === 'eliminar') {
+      await deleteReloj(id!);
+      return Astro.redirect(`/admin?ok=${encodeURIComponent(`Se eliminó ${reloj.marca} ${reloj.modelo}.`)}`);
+    } else if (!isNew && accion === 'portada') {
+      await setPortada(id!, Number(form.get('foto')));
+      return back('Portada actualizada.');
+    } else if (!isNew && accion === 'borrar-foto') {
+      await deleteFoto(id!, Number(form.get('foto')));
+      return back('Foto eliminada.');
+    } else if (!isNew && accion === 'foto-url') {
+      await addFoto(id!, await processFoto(await downloadFoto(String(form.get('url') ?? ''))));
+      return back('Foto agregada.');
+    }
+  } catch (e) {
+    errors = [(e as Error).message];
+  }
+}
+
+const r = reloj;
+const specsText = r.especificaciones.map((s) => `${s.nombre}: ${s.valor}`).join('\n');
+---
+
+<AdminLayout title={isNew ? 'Nuevo reloj' : `${r.marca} ${r.modelo}`}>
+  <div class="head">
+    <div>
+      <a class="small" href="/admin">← Relojes</a>
+      <h1>{isNew ? 'Nuevo reloj' : `${r.marca} ${r.modelo}`}</h1>
+    </div>
+    {
+      !isNew && (
+        <div class="row">
+          {!r.publicado && <span class="chip chip--borrador">Sin publicar</span>}
+          <span class={`chip chip--${r.estado}`}>{estadoLabel[r.estado]}</span>
+        </div>
+      )
+    }
+  </div>
+
+  {ok && <p class="notice notice--ok">{ok}</p>}
+  {
+    errors.length > 0 && (
+      <div class="notice notice--error">
+        <ul>{errors.map((e) => <li>{e}</li>)}</ul>
+      </div>
+    )
+  }
+  {
+    avisos.length > 0 && (
+      <div class="notice">
+        <b>Revisa antes de publicar:</b>
+        <ul>{avisos.map((a) => <li>{a}</li>)}</ul>
+      </div>
+    )
+  }
+
+  {
+    !isNew && (
+      <section class="card" aria-labelledby="fotosTitle">
+        <div class="head">
+          <h2 id="fotosTitle">Fotos</h2>
+          <span class="small muted">La primera es la portada. Verticales (4:5) se ven mejor.</span>
+        </div>
+        <ul class="fotos">
+          {r.fotos.map((f, i) => (
+            <li>
+              <img src={f.s} alt={`Foto ${i + 1}`} loading="lazy" />
+              <div class="row">
+                {i === 0 ? (
+                  <span class="chip">Portada</span>
+                ) : (
+                  <form method="post">
+                    <input type="hidden" name="accion" value="portada" />
+                    <input type="hidden" name="foto" value={f.id} />
+                    <button class="btn btn--sm">Usar de portada</button>
+                  </form>
+                )}
+                <form method="post" data-confirm="¿Eliminar esta foto?">
+                  <input type="hidden" name="accion" value="borrar-foto" />
+                  <input type="hidden" name="foto" value={f.id} />
+                  <button class="btn btn--sm btn--danger" aria-label={`Eliminar foto ${i + 1}`}>Eliminar</button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div class="upload">
+          <label class="btn btn--primary" for="fotos-input">+ Subir fotos</label>
+          <input id="fotos-input" type="file" accept="image/*" multiple hidden data-endpoint={`/api/admin/relojes/${r.id}/fotos`} />
+          <span class="small muted" id="upload-status" role="status"></span>
+        </div>
+        <details class="by-url">
+          <summary class="small">Agregar una foto desde una URL</summary>
+          <form method="post" class="row">
+            <input type="hidden" name="accion" value="foto-url" />
+            <input type="url" name="url" id="foto-url" placeholder="https://…" required />
+            <button class="btn btn--sm">Agregar</button>
+          </form>
+        </details>
+      </section>
+    )
+  }
+
+  <form method="post" class="card form" id="reloj-form">
+    <input type="hidden" name="accion" value="guardar" />
+    <h2>Datos</h2>
+    <div class="grid2">
+      <label class="field"><span>Marca *</span><input type="text" name="marca" id="marca" value={r.marca} required /></label>
+      <label class="field"><span>Modelo *</span><input type="text" name="modelo" id="modelo" value={r.modelo} required /></label>
+      <label class="field"><span>Referencia</span><input type="text" name="referencia" id="referencia" value={r.referencia} placeholder="PAM00425" /></label>
+      <label class="field">
+        <span>Medida o material</span>
+        <input type="text" name="medida" id="medida" value={r.medida} placeholder="47 mm" />
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label class="field">
+        <span>Estado</span>
+        <select name="estado" id="estado">
+          {ESTADOS.map((e) => <option value={e} selected={e === r.estado}>{estadoLabel[e]}</option>)}
+        </select>
+      </label>
+      <label class="field">
+        <span>Precio (CLP)</span>
+        <input type="text" inputmode="numeric" name="precio" id="precio" value={r.precio ?? ''} placeholder="Vacío = “Consultar precio”" />
+      </label>
+      <label class="field">
+        <span>Orden</span>
+        <input type="number" name="orden" id="orden" value={r.orden} />
+        <small>Los números menores aparecen primero.</small>
+      </label>
+      <label class="field">
+        <span>Etiqueta</span>
+        <input type="text" name="etiqueta" id="etiqueta" value={r.etiqueta ?? ''} placeholder="Edición de 200" />
+        <small>Opcional, se ve sobre la foto.</small>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Descripción</span>
+      <textarea name="descripcion" id="descripcion" rows="5">{r.descripcion}</textarea>
+    </label>
+
+    <div class="grid2">
+      <label class="field">
+        <span>Especificaciones</span>
+        <textarea name="especificaciones" id="especificaciones" rows="5" placeholder={'Calibre: P.3000, cuerda manual\nDiámetro: 47 mm'}>{specsText}</textarea>
+        <small>Una por línea, con el formato “Dato: valor”. La ficha muestra las 4 primeras.</small>
+      </label>
+      <label class="field">
+        <span>Qué incluye</span>
+        <textarea name="incluye" id="incluye" rows="5" placeholder={'Reloj\nCaja original\nGarantía 3 meses'}>{r.incluye.join('\n')}</textarea>
+        <small>Uno por línea.</small>
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label class="field">
+        <span>Encuadre de la portada</span>
+        <select name="encuadre" id="encuadre">
+          {ENCUADRES.map((e) => <option value={e.value} selected={e.value === r.encuadre}>{e.label}</option>)}
+        </select>
+        <small>Qué parte de la foto se mantiene al recortarla.</small>
+      </label>
+      <label class="field">
+        <span>Link de Instagram</span>
+        <input type="url" name="instagram_url" id="instagram_url" value={r.instagram_url ?? ''} placeholder="https://www.instagram.com/p/…" />
+      </label>
+    </div>
+
+    <label class="check">
+      <input type="checkbox" name="publicado" id="publicado" checked={r.publicado} />
+      Mostrar en la página
+    </label>
+
+    <div class="row">
+      <button class="btn btn--primary" type="submit">{isNew ? 'Crear reloj' : 'Guardar cambios'}</button>
+      <a class="btn" href="/admin">Cancelar</a>
+    </div>
+  </form>
+
+  {
+    !isNew && (
+      <form method="post" class="danger" data-confirm={`¿Eliminar ${r.marca} ${r.modelo} y todas sus fotos? No se puede deshacer.`}>
+        <input type="hidden" name="accion" value="eliminar" />
+        <button class="btn btn--danger">Eliminar reloj</button>
+      </form>
+    )
+  }
+</AdminLayout>
+
+<style>
+  .fotos {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .fotos li {
+    display: grid;
+    gap: 8px;
+  }
+  .fotos img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 10px;
+    background: var(--raised);
+  }
+  .upload {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .by-url {
+    margin-top: 12px;
+  }
+  .by-url form {
+    margin-top: 8px;
+  }
+  .by-url input {
+    flex: 1 1 240px;
+  }
+  .danger {
+    justify-self: start;
+  }
+</style>
+
+<script>
+  import { uploadFotos } from '../../../lib/client/upload';
+
+  document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((f) =>
+    f.addEventListener('submit', (e) => {
+      if (!confirm(f.dataset.confirm)) e.preventDefault();
+    }),
+  );
+
+  const input = document.getElementById('fotos-input') as HTMLInputElement | null;
+  const status = document.getElementById('upload-status');
+  input?.addEventListener('change', async () => {
+    const files = [...(input.files ?? [])];
+    if (!files.length || !status) return;
+    const label = document.querySelector<HTMLLabelElement>('label[for="fotos-input"]');
+    label?.setAttribute('aria-disabled', 'true');
+    try {
+      await uploadFotos(input.dataset.endpoint!, files, (m) => (status.textContent = m));
+      location.href = `${location.pathname}?ok=${encodeURIComponent(files.length > 1 ? 'Fotos agregadas.' : 'Foto agregada.')}`;
+    } catch (e) {
+      status.textContent = (e as Error).message;
+      label?.removeAttribute('aria-disabled');
+      input.value = '';
+    }
+  });
+</script>
