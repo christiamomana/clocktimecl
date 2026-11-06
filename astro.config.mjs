@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 import keystatic from '@keystatic/astro';
 
 // El administrador (/keystatic) se activa en desarrollo, o en producción con PUBLIC_KEYSTATIC_STORAGE=github.
@@ -13,5 +13,5 @@ export default defineConfig({
   site: 'https://clocktime.cl',
   build: { inlineStylesheets: 'always' },
   integrations: adminEnabled ? [react(), keystatic()] : [],
-  ...(adminEnabled && !isDev ? { adapter: node({ mode: 'standalone' }) } : {}),
+  ...(adminEnabled && !isDev ? { adapter: vercel() } : {}),
 });

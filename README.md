@@ -50,7 +50,7 @@ En producción el administrador guarda cada cambio como un commit en GitHub, y s
 1. Crea la rama `main` (el repo hoy solo tiene la rama de desarrollo) y apunta el hosting a ella.
 2. Corre `PUBLIC_KEYSTATIC_STORAGE=github npm run dev`, abre `/keystatic` y sigue el asistente: crea la GitHub App y guarda las claves en `.env` (no se sube al repo). Instala la app en `christiamomana/clocktimecl`.
 3. En el hosting, define las variables de `.env.example` con esos valores, y en la GitHub App agrega la URL de callback de tu dominio: `https://TU-DOMINIO/api/keystatic/github/oauth/callback`.
-4. Con `PUBLIC_KEYSTATIC_STORAGE=github` el build incluye el administrador y usa el adaptador `@astrojs/node` (servidor Node: `node dist/server/entry.mjs`). Si despliegas en Vercel o Netlify, cambia el adaptador en `astro.config.mjs` por `@astrojs/vercel` o `@astrojs/netlify`.
+4. Con `PUBLIC_KEYSTATIC_STORAGE=github` el build incluye el administrador y usa el adaptador `@astrojs/vercel` (las páginas siguen siendo estáticas; solo `/keystatic` y `/api/keystatic` corren como función). En Vercel: importa el repo, rama de producción `main`, y define las variables en *Settings → Environment Variables*.
 
 Sin esa variable, `npm run build` genera un sitio 100 % estático y sin administrador: el modo local nunca se publica.
 

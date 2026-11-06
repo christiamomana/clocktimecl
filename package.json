@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.12",
-    "@astrojs/node": "11.1.9",
     "@astrojs/react": "7.1.1",
+    "@astrojs/vercel": "11.0.16",
     "@keystatic/astro": "6.0.0",
     "@keystatic/core": "0.6.9",
     "astro": "^7.3.8",
