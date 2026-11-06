@@ -1,0 +1,206 @@
+---
+// Herramienta interna: calibra el gemelo paramétrico de cada pieza (recorte de la esfera y medidas)
+// y entrega el bloque `tryon` listo para pegar en src/data/pieces.ts. No se enlaza desde el sitio.
+import Layout from '../../layouts/Layout.astro';
+import { pieces, type TryOn } from '../../data/pieces';
+import { IMG } from '../../lib/pic';
+
+const items = pieces.map((p) => {
+  const widths = IMG[p.img] ?? [720];
+  const big = `/img/${p.img}-${widths[widths.length - 1]}.webp`;
+  const twin: TryOn = p.tryon ?? {
+    shape: 'round', caseMm: Number(p.size.match(/(\d+)\s*mm/)?.[1]) || 40, thickMm: 12, lugMm: 20,
+    metal: 'steel', strap: 'leather-brown', dial: { src: big, x: 0.5, y: 0.5, r: 0.2 },
+  };
+  return { id: p.img, label: `${p.brand} ${p.name}`, twin, has: Boolean(p.tryon) };
+});
+
+const shapes: TryOn['shape'][] = ['round', 'cushion', 'tonneau'];
+const metals: TryOn['metal'][] = ['steel', 'rose-gold', 'yellow-gold'];
+const straps: TryOn['strap'][] = ['leather-tan', 'leather-brown', 'leather-black', 'leather-navy', 'rubber-black', 'bracelet-steel'];
+---
+
+<Layout title="Calibrar gemelos · Clock Time Chile" noindex>
+  <main class="cal">
+    <a href="/probador" class="cal__back">← Probador</a>
+    <h1>Calibrar gemelos</h1>
+    <p class="cal__lead">
+      Ajusta la elipse verde al borde de la esfera (toca la foto para centrarla), revisa la maqueta 3D y copia el
+      bloque <code>tryon</code> en <code>src/data/pieces.ts</code>. Las medidas se toman de la ficha o con pie de metro.
+    </p>
+
+    <label class="cal__piece">Pieza
+      <select id="piece">
+        {items.map((it) => <option value={it.id} data-twin={JSON.stringify(it.twin)}>{it.label}{it.has ? '' : ' (sin gemelo)'}</option>)}
+      </select>
+    </label>
+
+    <div class="cal__grid">
+      <div class="cal__photo">
+        <img id="photo" alt="Foto de la pieza" />
+        <svg id="overlay" aria-hidden="true"><ellipse id="ell" fill="none" stroke="#34e07a" stroke-width="3" vector-effect="non-scaling-stroke" /></svg>
+      </div>
+
+      <div class="cal__side">
+        <div class="cal__previews">
+          <figure><canvas id="dial" width="256" height="256"></canvas><figcaption>Esfera recortada</figcaption></figure>
+          <figure><canvas id="three"></canvas><figcaption>Maqueta (arrastra para girar)</figcaption></figure>
+        </div>
+
+        <fieldset>
+          <legend>Esfera en la foto</legend>
+          <label>Centro X <input type="range" data-k="dial.x" min="0" max="1" step="0.001" /><output></output></label>
+          <label>Centro Y <input type="range" data-k="dial.y" min="0" max="1" step="0.001" /><output></output></label>
+          <label>Radio <input type="range" data-k="dial.r" min="0.02" max="0.6" step="0.001" /><output></output></label>
+          <label>Inclinación (alto/ancho) <input type="range" data-k="dial.sy" min="0.3" max="1.2" step="0.01" /><output></output></label>
+          <label>Giro (°) <input type="range" data-k="dial.rot" min="-45" max="45" step="0.5" /><output></output></label>
+          <label>Esfera / caja <input type="range" data-k="dial.face" min="0.6" max="0.99" step="0.01" /><output></output></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Caja y correa</legend>
+          <label>Forma <select data-k="shape">{shapes.map((s) => <option>{s}</option>)}</select></label>
+          <label>Diámetro (mm) <input type="number" data-k="caseMm" min="20" max="60" step="0.5" /></label>
+          <label>Grosor (mm) <input type="number" data-k="thickMm" min="5" max="25" step="0.5" /></label>
+          <label>Entre asas (mm) <input type="number" data-k="lugMm" min="10" max="30" step="1" /></label>
+          <label>Metal <select data-k="metal">{metals.map((s) => <option>{s}</option>)}</select></label>
+          <label>Correa <select data-k="strap">{straps.map((s) => <option>{s}</option>)}</select></label>
+        </fieldset>
+
+        <label class="cal__out">Bloque para pieces.ts
+          <textarea id="out" rows="6" readonly></textarea>
+        </label>
+        <button id="copy" class="btn" type="button">Copiar</button>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import type { TryOn } from '../../data/pieces';
+  import { drawDial, loadImage } from '../../lib/probador/dial';
+  import type { Preview } from '../../lib/probador/preview';
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const select = $<HTMLSelectElement>('piece');
+  const photo = $<HTMLImageElement>('photo');
+  const svg = document.getElementById('overlay') as unknown as SVGSVGElement;
+  const ell = document.getElementById('ell') as unknown as SVGEllipseElement;
+  const dialCanvas = $<HTMLCanvasElement>('dial');
+  const out = $<HTMLTextAreaElement>('out');
+  const fields = [...document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-k]')];
+
+  let twin: TryOn;
+  let preview: Preview | null = null;
+  let timer = 0;
+
+  const get = (k: string): unknown => k.split('.').reduce<any>((o, p) => o?.[p], twin);
+  const set = (k: string, v: unknown) => {
+    const path = k.split('.');
+    const last = path.pop()!;
+    (path.reduce<any>((o, p) => o[p], twin))[last] = v;
+  };
+  const DEFAULTS: Record<string, number> = { 'dial.sy': 1, 'dial.rot': 0, 'dial.face': 0.86 };
+  const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
+  function snippet(): string {
+    const d = twin.dial;
+    const dial = [`src: '${d.src}'`, `x: ${r3(d.x)}`, `y: ${r3(d.y)}`, `r: ${r3(d.r)}`];
+    if (d.sy !== undefined && d.sy !== 1) dial.push(`sy: ${r3(d.sy)}`);
+    if (d.rot) dial.push(`rot: ${d.rot}`);
+    if (d.face !== undefined) dial.push(`face: ${r3(d.face)}`);
+    return [
+      'tryon: {',
+      `  shape: '${twin.shape}', caseMm: ${twin.caseMm}, thickMm: ${twin.thickMm}, lugMm: ${twin.lugMm}, metal: '${twin.metal}', strap: '${twin.strap}',`,
+      `  dial: { ${dial.join(', ')} },`,
+      '},',
+    ].join('\n');
+  }
+
+  async function render(rebuild3d: boolean) {
+    const d = twin.dial;
+    const W = photo.naturalWidth, H = photo.naturalHeight;
+    if (W) {
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      ell.setAttribute('cx', String(d.x * W));
+      ell.setAttribute('cy', String(d.y * H));
+      ell.setAttribute('rx', String(d.r * W));
+      ell.setAttribute('ry', String(d.r * W * (d.sy ?? 1)));
+      ell.setAttribute('transform', `rotate(${d.rot ?? 0} ${d.x * W} ${d.y * H})`);
+      drawDial(dialCanvas, await loadImage(d.src), d);
+    }
+    out.value = snippet();
+    for (const f of fields) {
+      const v = get(f.dataset.k!) ?? DEFAULTS[f.dataset.k!];
+      if (document.activeElement !== f) f.value = String(v);
+      const o = f.nextElementSibling;
+      if (o?.tagName === 'OUTPUT') o.textContent = String(v);
+    }
+    if (rebuild3d) {
+      // La maqueta 3D (three.js) se carga perezosamente y se reconstruye con un pequeño retardo al mover los controles.
+      clearTimeout(timer);
+      timer = window.setTimeout(async () => {
+        if (!preview) {
+          const { createPreview } = await import('../../lib/probador/preview');
+          preview = createPreview($<HTMLCanvasElement>('three'));
+        }
+        await preview.set(structuredClone(twin));
+      }, 150);
+    }
+  }
+
+  function load() {
+    twin = JSON.parse(select.selectedOptions[0].dataset.twin!);
+    photo.onload = () => render(true);
+    photo.src = twin.dial.src;
+    history.replaceState(null, '', `?pieza=${encodeURIComponent(select.value)}`);
+  }
+
+  for (const f of fields) {
+    f.addEventListener('input', () => {
+      const k = f.dataset.k!;
+      set(k, f instanceof HTMLSelectElement ? f.value : Number(f.value));
+      render(true);
+    });
+  }
+  photo.addEventListener('click', (e) => {
+    const b = photo.getBoundingClientRect();
+    twin.dial.x = (e.clientX - b.left) / b.width;
+    twin.dial.y = (e.clientY - b.top) / b.height;
+    render(true);
+  });
+  select.addEventListener('change', load);
+  $('copy').addEventListener('click', () => navigator.clipboard?.writeText(out.value));
+
+  const wanted = new URLSearchParams(location.search).get('pieza');
+  const opt = [...select.options].find((o) => o.value === wanted);
+  if (opt) opt.selected = true;
+  load();
+</script>
+
+<style>
+  .cal { max-width: 1180px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+  .cal__back { color: var(--gold-ink); text-decoration: none; font-weight: 600; font-size: 14px; }
+  h1 { font-family: var(--font-display); font-size: var(--t-h3); margin: 20px 0 8px; }
+  .cal__lead { color: var(--ink-2); margin: 0 0 20px; max-width: 70ch; }
+  code { font-size: .9em; background: var(--ivory-2); padding: 1px 5px; border-radius: 4px; }
+  label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; min-width: 0; }
+  select, input[type=number], textarea { font: inherit; font-weight: 500; width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 12px; resize: vertical; }
+  .cal__piece { max-width: 420px; margin-bottom: 20px; }
+  .cal__grid { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .cal__grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+  .cal__photo { position: relative; align-self: start; border-radius: var(--radius); overflow: hidden; background: var(--night); }
+  .cal__photo img { display: block; width: 100%; height: auto; cursor: crosshair; }
+  .cal__photo svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .cal__side { display: grid; gap: 16px; align-content: start; }
+  .cal__previews { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; }
+  figcaption { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  #dial, #three { display: block; width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--night-2); }
+  fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  legend { font-weight: 700; font-size: 13px; padding: 0 6px; }
+  input[type=range] { width: 100%; accent-color: var(--gold-lo); }
+  output { font-weight: 500; font-size: 12px; color: var(--ink-2); }
+  .btn { justify-self: start; font: inherit; font-weight: 700; padding: 11px 24px; border-radius: 999px; border: 0; background: var(--ink); color: var(--ivory); cursor: pointer; }
+</style>

@@ -1,23 +1,25 @@
 ---
-// Prototipo del probador virtual. La página es estática y liviana: three.js y MediaPipe
+// Probador virtual. La página es estática y liviana: three.js y MediaPipe
 // (≈ 0,7 MB de JS + 13 MB de WASM + 7,8 MB de modelo) se descargan solo al tocar "Abrir cámara".
 import Layout from '../layouts/Layout.astro';
 import { pieces } from '../data/pieces';
+import { site } from '../data/site';
 
+// Solo piezas disponibles con gemelo paramétrico (campo `tryon` en pieces.ts).
 const options = pieces
-  .filter((p) => !p.reserved)
-  .map((p) => ({ id: p.img, label: `${p.brand} ${p.name}`, mm: Number(p.size.match(/(\d+(?:[.,]\d+)?)\s*mm/)?.[1]?.replace(',', '.')) || 40 }));
+  .filter((p) => !p.reserved && p.tryon)
+  .map((p) => ({ id: p.img, label: `${p.brand} ${p.name}`, twin: p.tryon! }));
 ---
 
-<Layout title="Probador virtual · Clock Time Chile" description="Pruébate un reloj en tu muñeca con la cámara del teléfono." noindex>
+<Layout title="Probador virtual · Clock Time Chile" description="Pruébate un reloj en tu muñeca con la cámara del teléfono." noindex={!site.probador}>
   <main class="tryon">
     <header class="tryon__head">
       <a href="/" class="tryon__back">← Volver</a>
-      <p class="tryon__eyebrow">Prototipo</p>
+      <p class="tryon__eyebrow">Beta</p>
       <h1>Probador virtual</h1>
       <p class="tryon__lead">
-        Apunta la cámara a tu muñeca y verás un reloj de referencia con el diámetro de la pieza elegida.
-        Es una maqueta genérica: sirve para hacerte una idea del tamaño, no reemplaza ver el reloj en persona.
+        Apunta la cámara a tu muñeca y verás una maqueta de la pieza elegida, con su tamaño, su caja y su esfera.
+        Es una referencia de tamaño: no reemplaza ver el reloj en persona.
       </p>
     </header>
 
@@ -25,7 +27,7 @@ const options = pieces
       <label>
         Pieza
         <select id="piece">
-          {options.map((o) => <option value={o.mm} data-id={o.id}>{o.label} · {o.mm} mm</option>)}
+          {options.map((o) => <option value={o.id} data-twin={JSON.stringify(o.twin)}>{o.label} · {o.twin.caseMm} mm</option>)}
         </select>
       </label>
       <button id="start" class="btn" type="button">Abrir cámara</button>
@@ -43,6 +45,7 @@ const options = pieces
 
     <p id="status" class="tryon__status" role="status" aria-live="polite"></p>
 
+    <p class="tryon__privacy">La primera vez se descargan unos 12 MB; si usas datos móviles, mejor con wifi.</p>
     <p class="tryon__privacy">
       🔒 El video no sale de tu teléfono: el reconocimiento de la mano se hace en el propio navegador
       y no grabamos ni enviamos imágenes. Solo se descarga el modelo de seguimiento.
@@ -52,6 +55,7 @@ const options = pieces
 
 <script>
   import type { TryOnSession } from '../lib/probador/engine';
+  import type { TryOn } from '../data/pieces';
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const select = $<HTMLSelectElement>('piece');
@@ -62,8 +66,9 @@ const options = pieces
 
   // Preselección por URL: /probador?pieza=radiomir-slc
   const wanted = new URLSearchParams(location.search).get('pieza');
-  const opt = [...select.options].find((o) => o.dataset.id === wanted);
+  const opt = [...select.options].find((o) => o.value === wanted);
   if (opt) opt.selected = true;
+  const twin = (): TryOn => JSON.parse(select.selectedOptions[0].dataset.twin!);
 
   let session: TryOnSession | null = null;
   let facing: 'user' | 'environment' = 'environment';
@@ -83,7 +88,7 @@ const options = pieces
         container: stage,
         video: $<HTMLVideoElement>('video'),
         canvas: $<HTMLCanvasElement>('overlay'),
-        caseMm: Number(select.value),
+        twin: twin(),
         facing,
         onStatus: say,
       });
@@ -102,7 +107,10 @@ const options = pieces
     }
   });
 
-  select.addEventListener('change', () => session?.setCaseMm(Number(select.value)));
+  select.addEventListener('change', () => {
+    void session?.setPiece(twin());
+    history.replaceState(null, '', `?pieza=${encodeURIComponent(select.value)}`);
+  });
   $('flip').addEventListener('click', () => session?.flip());
   $('facing').addEventListener('click', async () => {
     facing = facing === 'user' ? 'environment' : 'user';

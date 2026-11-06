@@ -62,6 +62,11 @@ const first = pieces[0];
           {first.reserved ? 'Buscar una pieza similar' : 'Consultar precio'}
         </a>
         <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
+        {site.probador && (
+          <a class="pill pill--glass" id="pTry" href={`/probador?pieza=${first.img}`} hidden={!first.tryon || first.reserved}>
+            Pruébatelo
+          </a>
+        )}
       </div>
       <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
     </div>
@@ -100,6 +105,11 @@ const first = pieces[0];
       );
       $('pIncl').replaceChildren(...p.incl.map((x) => el('span', x)));
       $('pAsk').textContent = p.reserved ? 'Buscar una pieza similar' : 'Consultar precio';
+      const tryBtn = document.getElementById('pTry') as HTMLAnchorElement | null;
+      if (tryBtn) {
+        tryBtn.hidden = !p.tryon || Boolean(p.reserved);
+        tryBtn.href = `/probador?pieza=${encodeURIComponent(p.img)}`;
+      }
       art.classList.remove('is-out');
     }, 280);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

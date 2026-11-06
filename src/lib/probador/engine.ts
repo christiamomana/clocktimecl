@@ -8,6 +8,9 @@
 import { FilesetResolver, HandLandmarker, type HandLandmarkerResult, type Landmark } from '@mediapipe/tasks-vision';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import type { TryOn } from '../../data/pieces';
+import { OneEuro, OneEuroN } from './filter';
+import { buildTwin, type Twin } from './twin';
 
 // El runtime WASM se sirve desde nuestro propio dominio (Vite lo copia a dist/_astro).
 import wasmLoaderSimd from '@mediapipe/tasks-vision/vision_wasm_internal.js?url';
@@ -15,22 +18,22 @@ import wasmBinarySimd from '@mediapipe/tasks-vision/vision_wasm_internal.wasm?ur
 import wasmLoaderNoSimd from '@mediapipe/tasks-vision/vision_wasm_nosimd_internal.js?url';
 import wasmBinaryNoSimd from '@mediapipe/tasks-vision/vision_wasm_nosimd_internal.wasm?url';
 
-// Modelo de Google, versión fijada (≈7,8 MB). En producción conviene copiarlo a /public.
-const MODEL_URL =
-  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+// Modelo de Google (hand_landmarker/float16/1, Apache-2.0, ≈7,8 MB) servido desde nuestro dominio:
+// así la IP del visitante no llega a terceros. Origen y sha256 en public/models/README.md.
+const MODEL_URL = '/models/hand_landmarker.task';
 
 export interface TryOnOptions {
   container: HTMLElement;
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
-  /** Diámetro de la caja en mm (sale de pieces.ts). */
-  caseMm: number;
+  /** Gemelo paramétrico de la pieza (pieces.ts). */
+  twin: TryOn;
   facing: 'user' | 'environment';
   onStatus?: (msg: string) => void;
 }
 
 export interface TryOnSession {
-  setCaseMm(mm: number): void;
+  setPiece(twin: TryOn): Promise<void>;
   setFacing(facing: 'user' | 'environment'): Promise<void>;
   /** Invierte la cara (dorso/palma) si la detección de mano izquierda/derecha falla. */
   flip(): void;
@@ -40,10 +43,6 @@ export interface TryOnSession {
 // Índices de los 21 puntos de MediaPipe Hands.
 const WRIST = 0, INDEX_MCP = 5, MIDDLE_MCP = 9, PINKY_MCP = 17;
 
-// Medidas aproximadas (mm) del maniquí: muñeca adulta y correa.
-const WRIST_RX = 31; // semieje horizontal de la muñeca
-const WRIST_RY = 22; // semieje dorso-palma
-const STRAP_W = 22;
 const OFFSET_FROM_WRIST = 32; // la caja va ~3 cm hacia el codo desde el pliegue de la muñeca
 
 let landmarkerPromise: Promise<HandLandmarker> | null = null;
@@ -69,98 +68,6 @@ async function getLandmarker(): Promise<HandLandmarker> {
     }
   })();
   return landmarkerPromise;
-}
-
-/** Esfera genérica (sin marcas) con las agujas a la hora actual. */
-function dialTexture(): { tex: THREE.CanvasTexture; dispose: () => void } {
-  const c = document.createElement('canvas');
-  c.width = c.height = 512;
-  const g = c.getContext('2d')!;
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const draw = () => {
-    const now = new Date();
-    g.fillStyle = '#101012';
-    g.beginPath(); g.arc(256, 256, 256, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#d4b06a';
-    for (let i = 0; i < 60; i++) {
-      const a = (i / 60) * Math.PI * 2;
-      const big = i % 5 === 0;
-      g.lineWidth = big ? 12 : 3;
-      const r0 = big ? 190 : 215;
-      g.beginPath();
-      g.moveTo(256 + Math.sin(a) * r0, 256 - Math.cos(a) * r0);
-      g.lineTo(256 + Math.sin(a) * 236, 256 - Math.cos(a) * 236);
-      g.stroke();
-    }
-    g.fillStyle = '#e6cd8e';
-    g.font = '600 30px Cinzel, Georgia, serif';
-    g.textAlign = 'center';
-    g.fillText('CLOCK TIME', 256, 170);
-    const hand = (angle: number, len: number, w: number, color: string) => {
-      g.save(); g.translate(256, 256); g.rotate(angle);
-      g.fillStyle = color; g.fillRect(-w / 2, -len, w, len + 24); g.restore();
-    };
-    const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds();
-    hand(((h + m / 60) / 12) * Math.PI * 2, 120, 14, '#f3ede2');
-    hand(((m + s / 60) / 60) * Math.PI * 2, 190, 9, '#f3ede2');
-    hand((s / 60) * Math.PI * 2, 205, 3, '#c9a45c');
-    g.fillStyle = '#c9a45c'; g.beginPath(); g.arc(256, 256, 12, 0, Math.PI * 2); g.fill();
-    tex.needsUpdate = true;
-  };
-  draw();
-  const id = setInterval(draw, 1000);
-  return { tex, dispose: () => { clearInterval(id); tex.dispose(); } };
-}
-
-/**
- * Reloj placeholder en mm. Ejes locales: X = a lo largo del antebrazo (hacia los dedos, lado de las 3),
- * Y = hacia las 12, Z = normal de la esfera (dorso de la mano). Origen = eje de la muñeca.
- */
-function buildWatch(dial: THREE.Texture) {
-  const root = new THREE.Group();
-  const steel = new THREE.MeshStandardMaterial({ color: 0xd9d6cf, metalness: 1, roughness: 0.22 });
-  const leather = new THREE.MeshStandardMaterial({ color: 0x3a2516, roughness: 0.7 });
-
-  // Oclusor: un cilindro elíptico invisible que tapa la mitad trasera de la correa.
-  const occ = new THREE.Mesh(
-    new THREE.CylinderGeometry(1, 1, 120, 40),
-    new THREE.MeshBasicMaterial({ colorWrite: false }),
-  );
-  occ.rotation.z = Math.PI / 2; // eje del cilindro = X (antebrazo)
-  occ.scale.set(WRIST_RX * 0.98, 1, WRIST_RY * 0.98);
-  occ.renderOrder = -1;
-  root.add(occ);
-
-  // Correa: anillo abierto alrededor de la muñeca.
-  const strap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, STRAP_W, 48, 1, true), leather);
-  leather.side = THREE.DoubleSide;
-  strap.rotation.z = Math.PI / 2;
-  strap.scale.set(WRIST_RX + 1.5, 1, WRIST_RY + 1.5);
-  root.add(strap);
-
-  // Caja + esfera, apoyadas sobre el dorso.
-  const head = new THREE.Group();
-  const caseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 64), steel);
-  caseMesh.rotation.x = Math.PI / 2; // eje = Z
-  head.add(caseMesh);
-  const face = new THREE.Mesh(new THREE.CircleGeometry(0.42, 64), new THREE.MeshStandardMaterial({ map: dial, roughness: 0.35 }));
-  head.add(face);
-  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.08, 20), steel);
-  crown.rotation.z = Math.PI / 2;
-  head.add(crown);
-  root.add(head);
-
-  const setCase = (mm: number) => {
-    const thick = Math.max(9, mm * 0.27);
-    caseMesh.scale.set(mm, thick, mm);
-    face.scale.setScalar(mm);
-    face.position.z = thick / 2 + 0.2;
-    crown.scale.set(mm, mm, mm);
-    crown.position.set(mm * 0.53, 0, 0);
-    head.position.z = WRIST_RY + thick / 2;
-  };
-  return { root, setCase };
 }
 
 // Conversión de coordenadas MediaPipe (x der, y abajo, z hacia la cámara negativo) a three (y arriba, z hacia la cámara).
@@ -202,11 +109,21 @@ export async function startTryOn(opts: TryOnOptions): Promise<TryOnSession> {
 
   // Cámara ortográfica en píxeles de video: (0,0) arriba a la izquierda.
   const camera = new THREE.OrthographicCamera(0, 1, 0, -1, -5000, 5000);
-  const dial = dialTexture();
-  const watch = buildWatch(dial.tex);
-  watch.setCase(opts.caseMm);
-  watch.root.visible = false;
-  scene.add(watch.root);
+  // Contenedor que sigue a la mano; el gemelo se cambia dentro sin tocar el seguimiento.
+  const anchor = new THREE.Group();
+  anchor.visible = false;
+  scene.add(anchor);
+  let twin: Twin | null = null;
+  let twinReq = 0;
+  async function setPiece(t: TryOn) {
+    const req = ++twinReq;
+    const next = await buildTwin(t);
+    if (req !== twinReq || stopped) return next.dispose(); // llegó otra pieza mientras cargaba
+    if (twin) { anchor.remove(twin.root); twin.dispose(); }
+    twin = next;
+    anchor.add(twin.root);
+  }
+  await setPiece(opts.twin);
   resize();
 
   function resize() {
@@ -217,19 +134,25 @@ export async function startTryOn(opts: TryOnOptions): Promise<TryOnSession> {
     camera.updateProjectionMatrix();
   }
 
-  // Estado suavizado (filtro exponencial simple; un filtro One Euro sería mejor).
-  const pos = new THREE.Vector3();
-  const quat = new THREE.Quaternion();
-  let scale = 0;
+  // Suavizado One Euro: posición (px), escala (px/mm) y los dos ejes de la mano (vectores unitarios).
+  const fPos = new OneEuroN(2, 1.0, 0.015);
+  const fScale = new OneEuro(0.6, 0.3);
+  const fFingers = new OneEuroN(3, 1.0, 0.4);
+  const fDorsal = new OneEuroN(3, 1.0, 0.4);
+  const resetFilters = () => [fPos, fScale, fFingers, fDorsal].forEach((f) => f.reset());
   let lastSeen = 0;
   let lastTs = -1;
 
   function update(res: HandLandmarkerResult, now: number) {
     const lm = res.landmarks[0], wl = res.worldLandmarks[0];
     if (!lm || !wl) {
-      if (now - lastSeen > 350) watch.root.visible = false;
+      if (now - lastSeen > 350 && anchor.visible) {
+        anchor.visible = false;
+        resetFilters(); // al reaparecer, que salte directo a la mano y no "vuele" desde la posición vieja
+      }
       return;
     }
+    const t = now / 1000;
     const W = video.videoWidth, H = video.videoHeight;
     const img = (i: number) => new THREE.Vector3(lm[i].x * W, -lm[i].y * H, 0);
     const w = (i: number) => toThree(wl[i]);
@@ -245,32 +168,30 @@ export async function startTryOn(opts: TryOnOptions): Promise<TryOnSession> {
     const pxPerMm = sImg / sWorld;
 
     // Base de la mano en 3D.
-    const fingers = w(MIDDLE_MCP).sub(w(WRIST)).normalize();
     // Con video SIN espejar (lo que recibe MediaPipe), la etiqueta corresponde a la mano real
     // (verificado con las imágenes de prueba de MediaPipe, v1.1.1). "Voltear" corrige si se equivoca.
     const label = res.handedness[0]?.[0]?.categoryName;
     const isRight = (label === 'Right') !== flipped;
     const a = w(INDEX_MCP).sub(w(WRIST)), b = w(PINKY_MCP).sub(w(WRIST));
-    const dorsal = isRight ? b.clone().cross(a) : a.clone().cross(b);
+    const rawFingers = w(MIDDLE_MCP).sub(w(WRIST)).normalize();
+    const rawDorsal = (isRight ? b.clone().cross(a) : a.clone().cross(b)).normalize();
+    const fingers = new THREE.Vector3(...fFingers.filter(rawFingers.toArray(), t)).normalize();
+    const dorsal = new THREE.Vector3(...fDorsal.filter(rawDorsal.toArray(), t));
     dorsal.addScaledVector(fingers, -dorsal.dot(fingers)).normalize();
     const twelve = dorsal.clone().cross(fingers);
-    const m = new THREE.Matrix4().makeBasis(fingers, twelve, dorsal);
-    const q = new THREE.Quaternion().setFromRotationMatrix(m);
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(fingers, twelve, dorsal));
 
     // Ancla: desde la muñeca, unos cm hacia el codo (proyectado en imagen).
-    const back = fingers.clone().multiplyScalar(-OFFSET_FROM_WRIST * pxPerMm);
+    const scale = fScale.filter(pxPerMm, t);
+    const back = rawFingers.clone().multiplyScalar(-OFFSET_FROM_WRIST * pxPerMm);
     const target = img(WRIST).add(new THREE.Vector3(back.x, back.y, 0));
-
-    const k = watch.root.visible ? 0.45 : 1; // sin suavizado en la primera detección
-    pos.lerp(target, k);
-    quat.slerp(q, k);
-    scale += (pxPerMm - scale) * k;
+    const [px, py] = fPos.filter([target.x, target.y], t);
     lastSeen = now;
 
-    watch.root.position.copy(pos);
-    watch.root.quaternion.copy(quat);
-    watch.root.scale.setScalar(scale);
-    watch.root.visible = true;
+    anchor.position.set(px, py, 0);
+    anchor.quaternion.copy(q);
+    anchor.scale.setScalar(scale);
+    anchor.visible = true;
   }
 
   const loop = () => {
@@ -291,7 +212,7 @@ export async function startTryOn(opts: TryOnOptions): Promise<TryOnSession> {
   addEventListener('pagehide', onHide);
 
   const session: TryOnSession = {
-    setCaseMm: (mm) => watch.setCase(mm),
+    setPiece,
     async setFacing(f) {
       facing = f;
       await openCamera();
@@ -303,7 +224,7 @@ export async function startTryOn(opts: TryOnOptions): Promise<TryOnSession> {
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
       video.srcObject = null;
-      dial.dispose();
+      twin?.dispose();
       renderer.dispose();
       removeEventListener('pagehide', onHide);
     },

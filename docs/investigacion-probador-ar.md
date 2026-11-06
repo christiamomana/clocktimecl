@@ -254,7 +254,45 @@ npm run dev -- --host       # en el computador: http://localhost:4321/probador
 
 ---
 
-## Fuentes
+## 6. Avance de la Fase 1 (gemelos paramétricos)
+
+**Hecho**
+
+- **Modelo de datos:** `TryOn` en `src/data/pieces.ts` (forma `round`/`cushion`/`tonneau`, diámetro, grosor,
+  ancho entre asas, metal, correa y recorte de la esfera). Las seis piezas disponibles tienen su gemelo; el Rolex
+  reservado no. **Las medidas son de referencia de cada modelo y hay que verificarlas con pie de metro**; la del
+  Longines (40 mm) es supuesta porque la ficha no la indica.
+- **Esfera desde la foto real** (`src/lib/probador/dial.ts`): la elipse de la esfera en la foto se convierte en un
+  círculo con una transformación afín, en el navegador. No hay archivos nuevos por pieza: se reutiliza la foto
+  que ya está en `public/img`.
+- **Geometría paramétrica** (`src/lib/probador/twin.ts`): carrura extruida (círculo o superelipse), bisel, esfera,
+  cristal levemente abombado, asas inclinadas hasta la correa, corona y correa o brazalete alrededor de una muñeca
+  de sección superelíptica (más plana en el dorso). El mismo contorno hace de oclusor invisible en el probador.
+- **Calibrador interno** `/probador/calibrar` (`noindex`, sin enlaces): elipse sobre la foto (tocar para centrar),
+  controles de medidas, vista de la esfera recortada, maqueta 3D giratoria y bloque `tryon` listo para copiar.
+  **[Estimación]** Calibrar una pieza nueva debería tomar 10–20 minutos.
+- **Filtro One Euro** (`src/lib/probador/filter.ts`) para posición, escala y orientación; se reinicia cuando la
+  mano sale de cuadro, para que el reloj no "vuele" al volver.
+- **Modelo de mano servido desde el propio dominio** (`public/models/hand_landmarker.task`, origen y sha256 en
+  `public/models/README.md`): ya no se contacta a Google al abrir la cámara.
+- **Botón "Pruébatelo" en la ficha**, detrás de `site.probador` (hoy `false`). Con `true` aparece en piezas con
+  gemelo y no reservadas, y `/probador` deja de ser `noindex`.
+- El probador cambia de pieza sin reiniciar la cámara y actualiza `?pieza=` en la URL; aviso de descarga (~12 MB).
+
+**Verificado [Medido]:** `npm run build` con 0 errores y 0 advertencias; las seis maquetas se revisaron en el
+calibrador; en Chromium *headless* con la mano de prueba de MediaPipe el gemelo aparece sobre el dorso, con la esfera
+hacia la cámara, y el cambio de pieza durante la sesión funciona. El botón de la ficha se probó con el interruptor
+activado (visible, oculto en la pieza reservada, enlace correcto).
+
+**Pendiente para cerrar la Fase 1**
+
+1. **Probar en teléfonos reales** (iPhone con Safari y 2–3 Android de gama media): encuadre, temblor, fps,
+   temperatura, permisos. Ajustar `OFFSET_FROM_WRIST` y los parámetros del filtro con esos datos.
+2. **Verificar las medidas** de cada pieza con pie de metro (diámetro, grosor, entre asas).
+3. Mejorar la nitidez de las esferas de las fotos en ángulo o lejanas (Movado, Radiomir GMT): una foto
+   frontal de la esfera por pieza basta y se calibra igual.
+4. Activar `probador: true` y medir el uso (un evento "probador abierto", sin imágenes ni puntos de la mano).
+
 
 - MediaPipe Hand Landmarker (web): <https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker/web_js>
 - Snap Lens Studio – Wristwear Try-On: <https://developers.snap.com/lens-studio/features/try-on/wristwear-try-on>
