@@ -1,8 +1,10 @@
 import postgres from 'postgres';
 
-// Conexión a Postgres (Neon en producción). Solo se usa DATABASE_URL, que es la que crea
-// la integración Neon de Vercel. Sin ella el sitio muestra la vitrina inicial y el admin avisa.
-const url = import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL;
+// Conexión a Postgres (Neon en producción). La integración Neon de Vercel crea DATABASE_URL, o
+// DB_DATABASE_URL si se conectó con el prefijo "DB". Sin ninguna, el sitio muestra la vitrina
+// inicial y el admin avisa.
+const env = (k: string): string | undefined => (import.meta.env[k] as string | undefined) || process.env[k] || undefined;
+const url = env('DATABASE_URL') ?? env('DB_DATABASE_URL');
 
 let client: postgres.Sql | null = null;
 let schemaReady: Promise<void> | null = null;

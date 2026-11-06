@@ -40,7 +40,7 @@ tests/                         pruebas del lector de fichas (npm test)
 
 ### Configuración en Vercel
 
-1. **Base de datos:** *Storage → Neon* y conéctala al proyecto. Crea `DATABASE_URL`; las tablas se crean solas.
+1. **Base de datos:** *Storage → Neon* y conéctala al proyecto. Crea `DATABASE_URL` (o `DB_DATABASE_URL` si se conectó con el prefijo `DB`); las tablas se crean solas.
 2. **Variables** (*Settings → Environment Variables*): `ADMIN_PASSWORD` y, opcional, `ADMIN_API_TOKEN` (ver `.env.example`).
 3. **Redeploy.** Entra a `/admin`: con la base vacía aparece el botón *Cargar los 7 relojes actuales*.
 
