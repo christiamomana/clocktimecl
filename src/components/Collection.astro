@@ -1,6 +1,6 @@
 ---
-import { askLabel, estadoLabel, formatCLP, fotoSrcset, type FotoView, type Reloj } from '../lib/relojes';
-import { site } from '../data/site';
+import { askLabel, askMessage, estadoLabel, formatCLP, fotoSrcset, type FotoView, type Reloj } from '../lib/relojes';
+import { site, whatsappLink } from '../data/site';
 
 interface Props {
   relojes: Reloj[];
@@ -19,6 +19,7 @@ const fichas = relojes.map((r) => ({
   especificaciones: r.especificaciones,
   incluye: r.incluye,
   ask: askLabel(r),
+  askHref: whatsappLink(askMessage(r)),
   precio: precioLabel(r),
   encuadre: r.encuadre,
   fotos: r.fotos.map((f) => ({ srcset: fotoSrcset(f), src: f.m, ancho: f.ancho, alto: f.alto })),
@@ -116,12 +117,12 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
           </div>
           <p class="piece__price tnum" id="pPrice" hidden={!first.precio}>{precioLabel(first)}</p>
           <div class="actions">
-            <a class="pill pill--gold" id="pAsk" href={site.dm} target="_blank" rel="noopener">
+            <a class="pill pill--gold" id="pAsk" href={whatsappLink(askMessage(first))} target="_blank" rel="noopener">
               {askLabel(first)}
             </a>
             <a class="pill pill--glass" href={site.instagram} target="_blank" rel="noopener">Ver en Instagram</a>
           </div>
-          <p class="piece__note">Confirma la disponibilidad por DM. Pago con tarjeta hasta 12 cuotas.</p>
+          <p class="piece__note">Te respondemos por WhatsApp. Pago con tarjeta hasta 12 cuotas.</p>
         </div>
       </div>
       <script type="application/json" id="fichas-data" set:html={JSON.stringify(fichas).replace(/</g, '\\u003c')} />
@@ -199,6 +200,7 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
     especificaciones: { nombre: string; valor: string }[];
     incluye: string[];
     ask: string;
+    askHref: string;
     precio: string;
     encuadre: string;
     fotos: { srcset: string; src: string; ancho: number; alto: number }[];
@@ -270,7 +272,9 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
       const price = $('pPrice')!;
       price.textContent = f.precio;
       price.hidden = !f.precio;
-      $('pAsk')!.textContent = f.ask;
+      const ask = $('pAsk') as HTMLAnchorElement;
+      ask.textContent = f.ask;
+      ask.href = f.askHref;
       box.classList.remove('is-out');
     }, 280);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

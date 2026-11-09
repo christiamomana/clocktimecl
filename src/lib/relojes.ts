@@ -58,6 +58,24 @@ export const formatCLP = (n: number) =>
 /** Texto del botón principal de la ficha. */
 export const askLabel = (r: Pick<Reloj, 'estado'>) => (r.estado === 'disponible' ? 'Consultar precio' : 'Buscar una pieza similar');
 
+/**
+ * Mensaje de WhatsApp del botón principal de la ficha: consulta el precio de la pieza
+ * o, si ya no está disponible, pide buscar una similar.
+ */
+export function askMessage(r: Pick<Reloj, 'marca' | 'modelo' | 'referencia' | 'medida' | 'estado'>): string {
+  // Solo datos que identifican la pieza: referencias y medidas con números ("PAM00425", "47 mm"),
+  // no textos como "Vintage" o "Acero"; y sin repetir la marca si el modelo ya la trae.
+  const conNumero = (v: string) => /\d/.test(v);
+  const nombre = r.modelo.toLowerCase().startsWith(r.marca.toLowerCase()) ? r.modelo : `${r.marca} ${r.modelo}`;
+  const detalle = [conNumero(r.referencia) && `ref. ${r.referencia}`, conNumero(r.medida) && r.medida]
+    .filter(Boolean)
+    .join(', ');
+  const pieza = nombre.trim() + (detalle ? ` (${detalle})` : '');
+  return r.estado === 'disponible'
+    ? `Hola, ¿cómo están? Quería consultar el precio del ${pieza} que vi en su sitio web. ¿Sigue disponible?`
+    : `Hola, ¿cómo están? Vi el ${pieza} en su sitio web, pero aparece como ${estadoLabel[r.estado].toLowerCase()}. ¿Me pueden ayudar a buscar una pieza similar?`;
+}
+
 /** Normaliza y valida datos que llegan del formulario o de la API. Devuelve errores legibles. */
 export function parseRelojInput(raw: Record<string, unknown>): { data?: RelojInput; errors: string[] } {
   const errors: string[] = [];
