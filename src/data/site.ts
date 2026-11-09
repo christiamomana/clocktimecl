@@ -1,6 +1,9 @@
 const whatsappNumber = '56957595547'; // +56 9 5759 5547
 const whatsappMessage = 'Hola, quería más información sobre comprar o vender un reloj. Gracias';
 
+/** Enlace a WhatsApp con un mensaje ya escrito. */
+export const whatsappUrl = (text: string) => `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+
 export const site = {
   name: 'Clock Time Chile',
   description:
@@ -8,7 +11,7 @@ export const site = {
   instagram: 'https://www.instagram.com/clocktimechile/',
   dm: 'https://ig.me/m/clocktimechile',
   handle: '@clocktimechile',
-  whatsapp: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`,
+  whatsapp: whatsappUrl(whatsappMessage),
   whatsappLabel: '+56 9 5759 5547',
 };
 
