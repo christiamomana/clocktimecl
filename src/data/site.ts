@@ -1,5 +1,5 @@
 const whatsappNumber = '56957595547'; // +56 9 5759 5547
-const whatsappMessage = 'Hola, ¿cómo están? Quería cachar más de los relojes que están vendiendo. ¿Me pueden contar qué tienen disponible?';
+const whatsappMessage = 'Hola, quería más información sobre comprar o vender un reloj. Gracias';
 
 export const site = {
   name: 'Clock Time Chile',
