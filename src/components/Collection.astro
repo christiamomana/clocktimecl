@@ -11,6 +11,11 @@ const first = relojes[0];
 const precioLabel = (r: Reloj) => (r.precio ? formatCLP(r.precio) : '');
 const fichaSizes = '(max-width: 900px) 100vw, 55vw';
 
+// Marcas con su cantidad, de la más numerosa a la menos: Panerai (6), Omega (4), Rolex (3)…
+const marcas = [...relojes.reduce((m, r) => m.set(r.marca, (m.get(r.marca) ?? 0) + 1), new Map<string, number>())].sort(
+  (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'),
+);
+
 // Datos para cambiar la ficha en el navegador sin recargar.
 const fichas = relojes.map((r) => ({
   marca: r.marca,
@@ -41,18 +46,30 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
   <div class="coll__head wrap center reveal">
     <span class="eyebrow" style="color:var(--gold-ink)">Relojes Clock Time</span>
     <h2 id="collTitle">La selección</h2>
-    <p>Piezas reales de nuestra vitrina, con su caja y sus papeles. Toca una para ver su ficha.</p>
+    <p>Relojes reales de nuestra vitrina, con su caja y sus papeles. Toca uno para ver su ficha.</p>
   </div>
   {
     relojes.length === 0 ? (
       <p class="wrap center coll__empty">
-        Estamos preparando nuevas piezas. Escríbenos y te contamos qué tenemos disponible.
+        Estamos preparando nuevos relojes. Escríbenos y te contamos qué tenemos disponible.
       </p>
     ) : (
       <div class="rail">
-        <div class="rail__track wrap" id="track" role="group" aria-label="Piezas">
+        {marcas.length > 1 && (
+          <div class="filters wrap" id="filters" role="group" aria-label="Filtrar por marca">
+            <button type="button" class="filter" data-marca="" aria-pressed="true">
+              Todos <span>({relojes.length})</span>
+            </button>
+            {marcas.map(([marca, n]) => (
+              <button type="button" class="filter" data-marca={marca} aria-pressed="false">
+                {marca} <span>({n})</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div class="rail__track wrap" id="track" role="group" aria-label="Relojes">
           {relojes.map((r, i) => (
-            <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>
+            <button class="tile" type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i} data-marca={r.marca}>
               {r.estado !== 'disponible' ? (
                 <span class="tag tag--sold">{estadoLabel[r.estado]}</span>
               ) : (
@@ -130,6 +147,46 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
 }
 
 <style>
+  .filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 20px;
+    justify-content: safe center;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter {
+    flex: none;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    font: 600 14px var(--font-sans);
+    background: rgba(23, 20, 15, 0.07);
+    color: var(--ink);
+    transition: background-color 0.25s var(--ease), color 0.25s var(--ease);
+  }
+
+  .filter span {
+    font-weight: 500;
+    opacity: 0.7;
+  }
+
+  .filter:hover {
+    background: rgba(23, 20, 15, 0.13);
+  }
+
+  .filter[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--ivory);
+  }
+
   .coll__empty {
     color: var(--ink-2);
     font-size: var(--t-lead);
@@ -246,7 +303,7 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
     );
   }
 
-  function show(i: number) {
+  function show(i: number, scroll = true) {
     const f = fichas[i];
     if (!f || !art || !track) return;
     current = i;
@@ -273,9 +330,27 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
       $('pAsk')!.textContent = f.ask;
       box.classList.remove('is-out');
     }, 280);
+    if (!scroll) return;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('ficha')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
   }
+
+  // Filtro por marca: oculta los relojes de otras marcas y muestra en la ficha el primero que queda.
+  $('filters')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter');
+    if (!btn || !track) return;
+    const marca = btn.dataset.marca ?? '';
+    $('filters')!.querySelectorAll('.filter').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    let first: number | null = null;
+    track.querySelectorAll<HTMLElement>('.tile').forEach((t) => {
+      const visible = !marca || t.dataset.marca === marca;
+      t.hidden = !visible;
+      if (visible && first === null) first = Number(t.dataset.i);
+    });
+    track.scrollTo({ left: 0 });
+    track.dispatchEvent(new Event('scroll'));
+    if (first !== null && first !== current) show(first, false);
+  });
 
   thumbs?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-f]');
