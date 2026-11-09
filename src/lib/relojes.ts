@@ -58,6 +58,16 @@ export const formatCLP = (n: number) =>
 /** Texto del botón principal de la ficha. */
 export const askLabel = (r: Pick<Reloj, 'estado'>) => (r.estado === 'disponible' ? 'Consultar precio' : 'Buscar una pieza similar');
 
+/** Mensaje de WhatsApp del botón principal de la ficha, sobre el reloj que se está viendo. */
+export function askMessage(r: Pick<Reloj, 'estado' | 'marca' | 'modelo' | 'referencia'>): string {
+  const nombre = r.modelo.toLowerCase().startsWith(r.marca.toLowerCase()) ? r.modelo : `${r.marca} ${r.modelo}`;
+  // Solo se agrega la referencia si es un código (PAM00425), no un texto como "Vintage".
+  const ref = /\d/.test(r.referencia) ? ` (ref. ${r.referencia})` : '';
+  return r.estado === 'disponible'
+    ? `Hola, quería consultar el precio del ${nombre}${ref} que vi en la página. Gracias`
+    : `Hola, vi el ${nombre}${ref} en la página. ¿Tienen uno similar disponible? Gracias`;
+}
+
 /** Normaliza y valida datos que llegan del formulario o de la API. Devuelve errores legibles. */
 export function parseRelojInput(raw: Record<string, unknown>): { data?: RelojInput; errors: string[] } {
   const errors: string[] = [];
