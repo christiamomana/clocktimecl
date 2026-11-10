@@ -1,0 +1,19 @@
+{
+  "name": "clocktimecl-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Historia out/historia-vertical.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.537",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.537"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}
