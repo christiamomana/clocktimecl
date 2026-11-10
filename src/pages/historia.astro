@@ -1,0 +1,453 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import WhatsAppButton from '../components/WhatsAppButton.astro';
+import StoryWatch from '../components/StoryWatch.astro';
+import { capitulos, cierre, prologo } from '../data/historia';
+import { site } from '../data/site';
+import { getVitrina } from '../lib/server/relojes';
+
+const marcas = [...new Set((await getVitrina()).map((r) => r.marca))].slice(0, 5);
+Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-revalidate=3600');
+---
+
+<Layout
+  title="Nuestra historia · Clock Time Chile"
+  description="Un antiguo reloj de oro, el regalo de una madre y las palabras de un profesor: así comenzó ClockTime Chile."
+>
+  <Header />
+  <main id="top" class="tale">
+    <section class="tale__hero">
+      <div class="wrap tale__hero-in">
+        <span class="eyebrow">Nuestra historia</span>
+        <h1>{prologo}</h1>
+        <p class="tale__sub">Un cuento en seis capítulos sobre un reloj de oro, una madre y un profesor.</p>
+        <a class="tale__start" href="#capitulo-i">
+          Comenzar a leer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
+        </a>
+      </div>
+    </section>
+
+    <div class="tale__body wrap" id="tale">
+      <aside class="tale__aside" aria-hidden="true">
+        <div class="tale__sticky">
+          <StoryWatch size={360} />
+          <p class="tale__now"><span data-now-num>I</span><span data-now-title>{capitulos[0].titulo}</span></p>
+        </div>
+      </aside>
+
+      <div class="tale__mini" aria-hidden="true">
+        <StoryWatch size={44} />
+        <p class="tale__now"><span data-now-num>I</span><span data-now-title>{capitulos[0].titulo}</span></p>
+      </div>
+
+      <div class="tale__text">
+        {
+          capitulos.map((c) => (
+            <section
+              class="chapter"
+              id={`capitulo-${c.numero.toLowerCase()}`}
+              data-num={c.numero}
+              data-title={c.titulo}
+              data-face={c.reloj}
+              aria-labelledby={`cap-${c.numero}`}
+            >
+              <header class="chapter__head reveal">
+                <span class="chapter__num">{c.numero}</span>
+                <h2 id={`cap-${c.numero}`}>{c.titulo}</h2>
+              </header>
+              {c.bloques.map((b, i) =>
+                b.tipo === 'p' ? (
+                  <p class="reveal" style={`--i:${i % 3}`} data-pause={b.pausa ? '' : undefined}>
+                    {b.texto}
+                  </p>
+                ) : b.tipo === 'big' ? (
+                  <p class="chapter__big reveal">{b.texto}</p>
+                ) : b.tipo === 'dialogo' ? (
+                  <p class:list={['line reveal', `line--${b.quien}`, { 'line--final': b.final }]}>
+                    <span class="line__who">{b.quien === 'profesor' ? 'El profesor' : 'El niño'}</span>
+                    <span class="line__text">—{b.texto}</span>
+                  </p>
+                ) : (
+                  <div class="chapter__list reveal">
+                    <p>{b.intro}</p>
+                    <ul>
+                      {b.items.map((it) => (
+                        <li>{it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ),
+              )}
+            </section>
+          ))
+        }
+      </div>
+    </div>
+
+    <section class="tale__end">
+      <div class="wrap tale__end-in">
+        <p class="tale__brand reveal">{cierre.marca}</p>
+        <p class="tale__motto reveal" style="--i:1">{cierre.lema}</p>
+        <p class="tale__final reveal" style="--i:2">
+          {cierre.final.map((l) => <span>{l}</span>)}
+        </p>
+        <div class="actions reveal" style="--i:3">
+          <a class="pill pill--gold" href="/#coleccion">Ver los relojes</a>
+          <a class="pill pill--glass" href={site.whatsapp} target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer marcas={marcas} />
+  <WhatsAppButton />
+</Layout>
+
+<style>
+  .tale__hero {
+    background: var(--night);
+    color: var(--on-night);
+    padding-block: clamp(80px, 12vw, 180px) clamp(64px, 8vw, 120px);
+    text-align: center;
+  }
+
+  .tale__hero-in {
+    display: grid;
+    justify-items: center;
+    gap: 22px;
+  }
+
+  .tale__hero .eyebrow {
+    color: var(--gold-hi);
+    margin: 0;
+  }
+
+  .tale__hero h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(36px, 6vw, 84px);
+    letter-spacing: 0.01em;
+    line-height: 1.08;
+    max-width: 16ch;
+  }
+
+  .tale__sub {
+    font-size: var(--t-lead);
+    color: var(--on-night-2);
+    max-width: 40ch;
+  }
+
+  .tale__start {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    color: var(--gold-night);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .tale__start svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tale__start svg {
+      animation: nudge 1.8s var(--ease) infinite;
+    }
+
+    @keyframes nudge {
+      50% {
+        transform: translateY(5px);
+      }
+    }
+  }
+
+  /* Cuerpo: reloj fijo a la izquierda, capítulos a la derecha */
+  .tale__body {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(40px, 6vw, 110px);
+    padding-block: clamp(64px, 8vw, 120px);
+  }
+
+  .tale__sticky {
+    position: sticky;
+    top: calc(72px + max(24px, (100svh - 72px - 440px) / 2));
+    display: grid;
+    justify-items: center;
+    gap: 22px;
+  }
+
+  .tale__now {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+
+  .tale__now [data-now-num] {
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.2em;
+    color: var(--gold-ink);
+  }
+
+  .tale__now [data-now-title] {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .tale__mini {
+    display: none;
+  }
+
+  .tale__text {
+    display: grid;
+    gap: clamp(96px, 14vw, 200px);
+    min-width: 0;
+  }
+
+  .chapter {
+    display: grid;
+    gap: 26px;
+    max-width: 60ch;
+    font-size: clamp(18px, 1.3vw, 20px);
+    line-height: 1.75;
+    color: var(--ink);
+  }
+
+  .chapter__head {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .chapter__num {
+    font-family: var(--font-display);
+    font-size: clamp(44px, 5vw, 64px);
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  .chapter__head h2 {
+    font-size: var(--t-h3);
+    letter-spacing: -0.015em;
+  }
+
+  .chapter__big {
+    font-size: clamp(24px, 2.4vw, 34px);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .line {
+    display: grid;
+    gap: 4px;
+    padding-left: 22px;
+    border-left: 2px solid var(--line);
+  }
+
+  .line__who {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+  }
+
+  .line__text {
+    font-size: clamp(22px, 2vw, 28px);
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  .line--niño {
+    margin-left: clamp(16px, 5vw, 64px);
+  }
+
+  .line--final {
+    border-left-color: var(--gold);
+  }
+
+  .line--final .line__text {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: 600;
+    font-size: clamp(30px, 3.4vw, 48px);
+    line-height: 1.15;
+    color: var(--gold-ink);
+    text-wrap: balance;
+  }
+
+  .chapter__list ul {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .chapter__list li {
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+    font-size: clamp(20px, 1.7vw, 24px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .chapter__list li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Cierre */
+  .tale__end {
+    background: var(--night);
+    color: var(--on-night);
+    padding-block: clamp(96px, 12vw, 180px);
+    text-align: center;
+  }
+
+  .tale__end-in {
+    display: grid;
+    justify-items: center;
+    gap: 26px;
+  }
+
+  .tale__brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 52px);
+    letter-spacing: 0.14em;
+    color: var(--gold-hi);
+  }
+
+  .tale__motto {
+    font-size: clamp(22px, 2.4vw, 32px);
+    font-weight: 600;
+    max-width: 26ch;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .tale__final {
+    display: grid;
+    gap: 4px;
+    color: var(--on-night-2);
+    font-size: var(--t-lead);
+  }
+
+  .tale__end .actions {
+    margin-top: 12px;
+  }
+
+  @media (max-width: 960px) {
+    .tale__body {
+      grid-template-columns: minmax(0, 1fr);
+      padding-top: 0;
+    }
+
+    .tale__aside {
+      display: none;
+    }
+
+    .tale__mini {
+      position: sticky;
+      top: calc(72px + env(safe-area-inset-top, 0px));
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-inline: calc(-1 * max(var(--gutter), env(safe-area-inset-left, 0px)));
+      padding: 10px max(var(--gutter), env(safe-area-inset-left, 0px));
+      background: var(--ivory);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tale__mini .tale__now {
+      justify-items: start;
+      text-align: left;
+      grid-auto-flow: column;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .tale__text {
+      padding-top: 48px;
+    }
+  }
+</style>
+
+<script>
+  // Las agujas avanzan con la lectura: el cuento recorre ocho horas, de las 7:00 a las 15:00.
+  const tale = document.getElementById('tale')!;
+  const watches = [...document.querySelectorAll<HTMLElement>('[data-story-watch]')];
+  const hands = (name: string) => watches.map((w) => w.querySelector<SVGGElement>(`[data-hand="${name}"]`)!);
+  const hourHands = hands('hour');
+  const minuteHands = hands('minute');
+  const HOURS = 8;
+  let paused = false;
+  let lastP = 0;
+
+  function update() {
+    const rect = tale.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (innerHeight / 2 - rect.top) / rect.height));
+    if (!paused) lastP = p;
+    const minutes = lastP * HOURS * 60;
+    minuteHands.forEach((h) => (h.style.transform = `rotate(${(minutes % 60) * 6}deg)`));
+    hourHands.forEach((h) => (h.style.transform = `rotate(${(7 * 60 + minutes) * 0.5}deg)`));
+  }
+
+  let ticking = false;
+  addEventListener(
+    'scroll',
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        update();
+        ticking = false;
+      });
+    },
+    { passive: true },
+  );
+  addEventListener('resize', update);
+  update();
+
+  // Capítulo en curso: rótulo bajo el reloj y cara (esfera o mecanismo).
+  const nums = document.querySelectorAll('[data-now-num]');
+  const titles = document.querySelectorAll('[data-now-title]');
+  const chapters = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target as HTMLElement;
+        nums.forEach((n) => (n.textContent = el.dataset.num ?? ''));
+        titles.forEach((t) => (t.textContent = el.dataset.title ?? ''));
+        watches.forEach((w) => (w.dataset.face = el.dataset.face ?? 'esfera'));
+      }),
+    { rootMargin: '-45% 0px -45% 0px' },
+  );
+  document.querySelectorAll('.chapter').forEach((c) => chapters.observe(c));
+
+  // "Como si el tiempo hubiese decidido detenerse por un instante": el reloj se detiene en esa frase.
+  const pause = document.querySelector('[data-pause]');
+  if (pause) {
+    new IntersectionObserver(
+      ([e]) => {
+        paused = e.isIntersecting;
+        watches.forEach((w) => (paused ? (w.dataset.paused = '') : delete w.dataset.paused));
+        update();
+      },
+      { rootMargin: '-35% 0px -35% 0px' },
+    ).observe(pause);
+  }
+</script>

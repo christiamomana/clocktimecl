@@ -2,27 +2,27 @@
 import { site } from '../data/site';
 
 interface Props {
-  marcas: string[];
+  marcas?: string[];
 }
 
-const { marcas } = Astro.props;
+const { marcas = [] } = Astro.props;
 
 const year = new Date().getFullYear();
 const cols = [
   {
     title: 'Relojes',
-    links: [...marcas.map((m) => [m, '#coleccion']), ['Toda la selección', '#coleccion']],
+    links: [...marcas.map((m) => [m, '/#coleccion']), ['Toda la selección', '/#coleccion']],
   },
   {
     title: 'Servicios',
     links: [
-      ['Compra con pago inmediato', '#vender'], ['Consignación', '#preguntas'],
-      ['Tasación profesional', '#tasar'], ['Garantía de 3 meses', '#garantia'],
+      ['Compra con pago inmediato', '/#vender'], ['Consignación', '/#preguntas'],
+      ['Tasación profesional', '/#tasar'], ['Garantía de 3 meses', '/#garantia'],
     ],
   },
   {
     title: 'Clock Time',
-    links: [['Nuestra historia', '#historia'], ['Preguntas frecuentes', '#preguntas'], ['Envíos a todo Chile', '#garantia']],
+    links: [['Nuestra historia', '/historia'], ['Preguntas frecuentes', '/#preguntas'], ['Envíos a todo Chile', '/#garantia']],
   },
   { title: 'Canales oficiales', links: [['WhatsApp', site.whatsapp], ['Instagram', site.instagram], ['Mensaje directo', site.dm]] },
 ];

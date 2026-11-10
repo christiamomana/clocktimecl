@@ -36,5 +36,26 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <slot />
+    <script>
+      // Aparición al hacer scroll: solo lo que empieza bajo el primer pantallazo.
+      if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const io = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                e.target.classList.remove('is-waiting');
+                io.unobserve(e.target);
+              }
+            }),
+          { rootMargin: '0px 0px -10% 0px' },
+        );
+        document.querySelectorAll('.reveal').forEach((el) => {
+          if (el.getBoundingClientRect().top > innerHeight) {
+            el.classList.add('is-waiting');
+            io.observe(el);
+          }
+        });
+      }
+    </script>
   </body>
 </html>
