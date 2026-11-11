@@ -1,0 +1,910 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import WhatsAppButton from '../components/WhatsAppButton.astro';
+import Pic from '../components/Pic.astro';
+import { whatsappUrl } from '../data/site';
+import { calcularConsignacion } from '../lib/consignacion';
+import { formatCLP } from '../lib/relojes';
+import { getVitrina } from '../lib/server/relojes';
+
+const marcas = [...new Set((await getVitrina()).map((r) => r.marca))].slice(0, 5);
+Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-revalidate=3600');
+
+const consignarUrl = whatsappUrl('Hola, quiero consignar mi reloj. ¿Me pueden contar cómo empezar? Gracias');
+const ejemplo = calcularConsignacion(2_000_000);
+
+const pasos = [
+  { n: 1, id: 'evaluacion', titulo: 'Evaluación y autenticidad' },
+  { n: 2, id: 'valoracion', titulo: 'Valoración comercial' },
+  { n: 3, id: 'comision', titulo: 'Comisión y precio de venta' },
+  { n: 4, id: 'fotografia', titulo: 'Fotografía y promoción' },
+  { n: 5, id: 'acuerdo', titulo: 'Acuerdo formal' },
+  { n: 6, id: 'custodia', titulo: 'Tenencia, custodia y entrega' },
+  { n: 7, id: 'compromiso', titulo: 'Nuestro compromiso' },
+];
+---
+
+<Layout
+  title="Consignación de relojes de alta gama · Clock Time Chile"
+  description="¿Quieres vender tu reloj? Nosotros nos encargamos. Consignación profesional, segura y transparente: 10 % de comisión solo si se vende."
+>
+  <Header />
+  <main id="top" class="cons">
+    <!-- Portada -->
+    <section class="cons__hero">
+      <div class="cons__hero-media" aria-hidden="true">
+        <Pic name="longines-wrist" sizes="(max-width: 900px) 100vw, 50vw" />
+      </div>
+      <div class="wrap cons__hero-in">
+        <span class="eyebrow">Servicio de consignación de relojes de alta gama</span>
+        <h1>¿Quieres vender tu reloj? <em>Nosotros nos encargamos.</em></h1>
+        <p class="cons__lead">
+          En ClockTimeChile ofrecemos un servicio de consignación profesional, seguro y transparente, destinado a quienes
+          desean vender su reloj de alta gama con el respaldo de una gestión comercial especializada.
+        </p>
+        <div class="actions">
+          <a class="pill pill--gold" href={consignarUrl} target="_blank" rel="noopener">Quiero consignar mi reloj</a>
+          <a class="pill pill--glass" href="#comision">Calcula tu precio de venta</a>
+        </div>
+        <ul class="cons__facts">
+          <li><b>10 %</b> de comisión, solo si se vende</li>
+          <li><b>Tu reloj</b> queda contigo, si lo prefieres</li>
+          <li><b>Acuerdo</b> firmado por ambas partes</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Índice del proceso -->
+    <nav class="cons__index wrap" aria-label="El proceso en 7 pasos">
+      <p class="eyebrow">El proceso en 7 pasos</p>
+      <ol>
+        {
+          pasos.map((p) => (
+            <li>
+              <a href={`#${p.id}`}>
+                <span class="tnum">{p.n}</span>
+                {p.titulo}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <!-- 1 -->
+    <section class="step wrap" id="evaluacion" aria-labelledby="t1">
+      <header class="step__head reveal">
+        <span class="step__n">1</span>
+        <h2 id="t1">Evaluación y autenticidad</h2>
+      </header>
+      <div class="step__body reveal" style="--i:1">
+        <p>
+          Nuestro proceso comienza con una revisión del reloj, orientada a verificar su autenticidad y originalidad,
+          estableciendo que se trate de una pieza genuina.
+        </p>
+        <p>
+          Asimismo, evaluamos su estado estético y funcional, condiciones generales de conservación y si cuenta con su
+          presentación completa (Full Set), incluyendo caja, documentación y accesorios originales.
+        </p>
+        <ul class="checks-list">
+          <li>Autenticidad y originalidad</li>
+          <li>Estado estético</li>
+          <li>Estado funcional</li>
+          <li>Conservación general</li>
+          <li>Full Set: caja, documentación y accesorios</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="step wrap" id="valoracion" aria-labelledby="t2">
+      <header class="step__head reveal">
+        <span class="step__n">2</span>
+        <h2 id="t2">Valoración comercial</h2>
+      </header>
+      <div class="step__body reveal" style="--i:1">
+        <p>
+          Considerando la marca, modelo, referencia, antigüedad, estado de conservación y valores del mercado de segunda
+          mano, realizamos una estimación comercial del reloj.
+        </p>
+        <ul class="tags" aria-label="Qué consideramos">
+          <li>Marca</li>
+          <li>Modelo</li>
+          <li>Referencia</li>
+          <li>Antigüedad</li>
+          <li>Estado de conservación</li>
+          <li>Mercado de segunda mano</li>
+        </ul>
+        <p>
+          Esta valoración se contrasta con las expectativas económicas del propietario, buscando establecer de común
+          acuerdo un precio de venta competitivo y conveniente para ambas partes.
+        </p>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="step step--dark" id="comision" aria-labelledby="t3">
+      <div class="wrap step__in">
+        <header class="step__head reveal">
+          <span class="step__n">3</span>
+          <h2 id="t3">Comisión y precio de venta</h2>
+        </header>
+        <div class="step__body reveal" style="--i:1">
+          <p>
+            ClockTimeChile cobra una comisión del <b>10 % sobre el valor final de venta</b>, únicamente cuando la operación
+            se concreta.
+          </p>
+          <p>
+            Para que el propietario reciba el monto líquido previamente acordado, el precio de venta necesario se calcula
+            incorporando nuestra comisión.
+          </p>
+
+          <form class="calc" id="calc" aria-labelledby="calcTitle">
+            <h3 id="calcTitle">Calcula tu precio de venta</h3>
+            <label class="calc__field" for="liquido">
+              <span>¿Cuánto quieres recibir líquido?</span>
+              <span class="calc__input">
+                <span aria-hidden="true">$</span>
+                <input id="liquido" name="liquido" inputmode="numeric" autocomplete="off" value="2.000.000" />
+              </span>
+            </label>
+            <dl class="calc__out tnum" aria-live="polite">
+              <div>
+                <dt>Precio de venta</dt>
+                <dd id="out-precio">{formatCLP(ejemplo.precioVenta)}</dd>
+              </div>
+              <div>
+                <dt>Comisión 10 %</dt>
+                <dd id="out-comision">{formatCLP(ejemplo.comision)}</dd>
+              </div>
+              <div class="calc__total">
+                <dt>Recibes</dt>
+                <dd id="out-liquido">{formatCLP(ejemplo.liquido)}</dd>
+              </div>
+            </dl>
+            <p class="calc__note">Valores aproximados. El precio final se acuerda contigo según la valoración del reloj.</p>
+            <a class="pill pill--gold" id="calc-cta" href={consignarUrl} target="_blank" rel="noopener">Consignar con este monto</a>
+          </form>
+
+          <p>
+            Por ejemplo, si el propietario desea recibir $2.000.000 líquidos, el precio de venta deberá ser aproximadamente
+            $2.222.222, correspondiendo cerca de $222.222 a nuestra comisión del 10 %.
+          </p>
+          <p>
+            De esta manera, ambas partes conocen anticipadamente el precio de venta, la comisión aplicable y el monto que
+            recibirá el propietario.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="step wrap" id="fotografia" aria-labelledby="t4">
+      <header class="step__head reveal">
+        <span class="step__n">4</span>
+        <h2 id="t4">Fotografía y promoción comercial</h2>
+      </header>
+      <div class="step__body reveal" style="--i:1">
+        <p>
+          Una vez aceptada la consignación, ClockTimeChile realizará una sesión fotográfica y audiovisual del reloj,
+          destacando sus características, detalles, estado de conservación y atributos particulares.
+        </p>
+        <div class="gallery" aria-hidden="true">
+          <Pic name="radiomir-slc" sizes="(max-width: 700px) 33vw, 220px" />
+          <Pic name="longines-moonphase" sizes="(max-width: 700px) 33vw, 220px" />
+          <Pic name="tag-formula1" sizes="(max-width: 700px) 33vw, 220px" />
+        </div>
+        <p>
+          Las fotografías y videos serán utilizados para promocionar el reloj en nuestra página web, cuenta oficial de
+          Instagram y demás canales comerciales autorizados.
+        </p>
+        <p>
+          Esta presentación busca potenciar su visibilidad y atractivo ante potenciales compradores, mediante una exhibición
+          profesional acorde con la categoría de la pieza.
+        </p>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="step wrap" id="acuerdo" aria-labelledby="t5">
+      <header class="step__head reveal">
+        <span class="step__n">5</span>
+        <h2 id="t5">Acuerdo formal de consignación</h2>
+      </header>
+      <div class="step__body reveal" style="--i:1">
+        <p>
+          Para garantizar la transparencia y seguridad de la operación, ambas partes firmarán un documento de consignación,
+          donde quedarán establecidas las condiciones previamente acordadas.
+        </p>
+        <div class="doc">
+          <p class="doc__title">El documento identificará</p>
+          <ul>
+            <li>El reloj, su estado y accesorios</li>
+            <li>El precio de venta autorizado</li>
+            <li>La comisión del 10 %</li>
+            <li>El monto líquido esperado por el propietario</li>
+            <li>Las condiciones de custodia, comercialización y entrega</li>
+          </ul>
+        </div>
+        <p>El acuerdo permitirá resguardar los derechos y obligaciones tanto del propietario como de ClockTimeChile.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="step step--dark" id="custodia" aria-labelledby="t6">
+      <div class="wrap step__in">
+        <header class="step__head reveal">
+          <span class="step__n">6</span>
+          <h2 id="t6">Tenencia, custodia, resguardo y entrega del reloj</h2>
+        </header>
+        <div class="step__body reveal" style="--i:1">
+          <p>
+            En ClockTimeChile entendemos que la seguridad y tranquilidad del propietario son fundamentales durante todo el
+            proceso de consignación.
+          </p>
+        </div>
+
+        <div class="modes">
+          <article class="mode reveal">
+            <span class="mode__tag">Por defecto</span>
+            <h3>El reloj queda contigo</h3>
+            <p>
+              Como principio general, el reloj permanecerá en poder y bajo la custodia de su propietario mientras dure el
+              proceso de comercialización.
+            </p>
+            <p>
+              ClockTimeChile realizará su gestión de venta mediante las fotografías y videos obtenidos durante la evaluación
+              y presentación inicial de la pieza, utilizando dicho material para su promoción en nuestra página web,
+              Instagram y demás canales comerciales autorizados.
+            </p>
+          </article>
+          <article class="mode reveal" style="--i:1">
+            <span class="mode__tag">Opcional</span>
+            <h3>Custodia voluntaria por ClockTimeChile</h3>
+            <p>
+              De manera alternativa, si el propietario así lo desea, podrá entregar voluntariamente su reloj a ClockTimeChile
+              para su custodia durante el período de comercialización.
+            </p>
+            <p>
+              En este caso, la recepción de la pieza quedará debidamente documentada, identificando sus características,
+              estado de conservación y accesorios entregados.
+            </p>
+            <p>
+              Mientras el reloj permanezca bajo su custodia, ClockTimeChile asumirá la responsabilidad por su integridad y
+              resguardo, respondiendo ante cualquier eventualidad que implique su pérdida, robo, daño o deterioro, conforme
+              a las condiciones y mecanismos de compensación establecidos en el acuerdo firmado por ambas partes.
+            </p>
+          </article>
+        </div>
+
+        <div class="subs">
+          <div class="sub reveal">
+            <h3>Exhibición presencial a potenciales compradores</h3>
+            <p>
+              En caso de que un potencial comprador requiera examinar presencialmente el reloj antes de concretar la
+              operación, se coordinará una instancia de exhibición bajo la gestión y supervisión de ClockTimeChile.
+            </p>
+            <p>
+              Esta presentación podrá realizarse con la participación del propietario, quien conservará la posibilidad de
+              acompañar y supervisar la exhibición de su reloj, sin establecer contacto comercial directo con el potencial
+              comprador.
+            </p>
+            <p>
+              Toda negociación, coordinación de condiciones y eventual cierre de la venta será gestionada exclusivamente por
+              ClockTimeChile, conforme al acuerdo de consignación suscrito.
+            </p>
+          </div>
+          <div class="sub reveal" style="--i:1">
+            <h3>Concreción de la venta y entrega definitiva</h3>
+            <p>
+              Una vez acordada la venta, ClockTimeChile coordinará la entrega del reloj al comprador, previa verificación de
+              la recepción efectiva del pago y conforme a las condiciones pactadas con el propietario.
+            </p>
+            <p>
+              La liquidación correspondiente al propietario se realizará descontando la comisión de consignación del 10 %
+              sobre el valor final de venta, respetando el monto líquido y las demás condiciones previamente acordadas.
+            </p>
+          </div>
+        </div>
+
+        <p class="step__closing reveal">
+          De esta manera, ClockTimeChile ofrece un servicio de consignación flexible, transparente y seguro, permitiendo que
+          cada propietario elija la modalidad de resguardo que le otorgue mayor tranquilidad.
+        </p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="step wrap" id="compromiso" aria-labelledby="t7">
+      <header class="step__head reveal">
+        <span class="step__n">7</span>
+        <h2 id="t7">Nuestro compromiso</h2>
+      </header>
+      <div class="step__body reveal" style="--i:1">
+        <p>
+          En ClockTimeChile entendemos que cada reloj representa mucho más que su valor comercial. Es una pieza que merece
+          una presentación adecuada, una valoración responsable y una gestión de venta profesional.
+        </p>
+        <p>
+          Nuestro compromiso es ofrecer confianza, transparencia y atención personalizada, cuidando los intereses de quienes
+          nos confían sus relojes y de quienes deciden adquirirlos.
+        </p>
+      </div>
+    </section>
+
+    <!-- Cierre -->
+    <section class="cons__end">
+      <div class="wrap cons__end-in">
+        <p class="cons__brand reveal">CLOCK TIME CHILE</p>
+        <p class="cons__motto reveal" style="--i:1">Tu reloj merece estar en buenas manos.</p>
+        <p class="cons__meta reveal" style="--i:2">Compra • Venta • Consignación<br />Concepción | Todo Chile</p>
+        <div class="actions reveal" style="--i:3">
+          <a class="pill pill--gold" href={consignarUrl} target="_blank" rel="noopener">Quiero consignar mi reloj</a>
+          <a class="pill pill--glass" href="/#tasar">Pedir una tasación</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer marcas={marcas} />
+  <WhatsAppButton />
+</Layout>
+
+<style>
+  /* Portada */
+  .cons__hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--night);
+    color: var(--on-night);
+    isolation: isolate;
+  }
+
+  .cons__hero-media {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 50%;
+    z-index: -2;
+  }
+
+  .cons__hero-media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cons__hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(90deg, var(--night) 0%, var(--night) 48%, rgba(11, 11, 12, 0.5) 62%, rgba(11, 11, 12, 0.15) 100%);
+  }
+
+  .cons__hero-in {
+    display: grid;
+    gap: 24px;
+    padding-block: clamp(72px, 10vw, 150px);
+    max-width: 1280px;
+  }
+
+  .cons__hero-in > * {
+    max-width: 620px;
+  }
+
+  .cons__hero .eyebrow {
+    color: var(--gold-hi);
+    margin: 0;
+  }
+
+  .cons__hero h1 {
+    font-size: clamp(38px, 5vw, 72px);
+  }
+
+  .cons__hero h1 em {
+    font-style: normal;
+    color: var(--gold-hi);
+  }
+
+  .cons__lead {
+    font-size: var(--t-lead);
+    color: var(--on-night);
+    opacity: 0.9;
+    max-width: 48ch;
+  }
+
+  .cons__hero .actions {
+    justify-content: flex-start;
+  }
+
+  .cons__facts {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--night-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-size: 14px;
+    color: var(--on-night-2);
+  }
+
+  .cons__facts b {
+    color: var(--gold-night);
+  }
+
+  @media (max-width: 900px) {
+    .cons__hero-media {
+      width: 100%;
+      opacity: 0.25;
+    }
+
+    .cons__hero::after {
+      background: linear-gradient(180deg, rgba(11, 11, 12, 0.6), var(--night));
+    }
+  }
+
+  /* Índice */
+  .cons__index {
+    padding-block: clamp(40px, 5vw, 64px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cons__index .eyebrow {
+    color: var(--gold-ink);
+  }
+
+  .cons__index ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 8px;
+  }
+
+  .cons__index a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--ivory-2);
+    transition: background-color 0.25s var(--ease);
+  }
+
+  .cons__index a:hover {
+    background: var(--white);
+  }
+
+  .cons__index a span {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 1px solid var(--gold);
+    font-family: var(--font-display);
+    color: var(--gold-ink);
+  }
+
+  /* Pasos */
+  .step {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(28px, 6vw, 110px);
+    padding-block: clamp(64px, 8vw, 120px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .step__in {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 48px);
+  }
+
+  .step--dark {
+    display: block;
+    background: var(--night);
+    color: var(--on-night);
+    border-bottom: 0;
+  }
+
+  .step--dark .step__in {
+    max-width: 1100px;
+    margin-inline: auto;
+  }
+
+  .step__head {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .step__n {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 7vw, 96px);
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  .step__head h2 {
+    font-size: var(--t-h3);
+    letter-spacing: -0.015em;
+    max-width: 18ch;
+  }
+
+  .step--dark .step__head h2 {
+    font-size: clamp(28px, 3vw, 44px);
+    max-width: 22ch;
+  }
+
+  .step__body {
+    display: grid;
+    gap: 18px;
+    font-size: var(--t-lead);
+    line-height: 1.7;
+    max-width: 62ch;
+    min-width: 0;
+  }
+
+  .step:not(.step--dark) .step__body {
+    color: var(--ink-2);
+  }
+
+  .step:not(.step--dark) .step__body b {
+    color: var(--ink);
+  }
+
+  .step--dark .step__body {
+    color: var(--on-night);
+  }
+
+  .checks-list {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+  }
+
+  .checks-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .checks-list li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .checks-list li::before {
+    content: '';
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b0b0c' stroke-width='3'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 12px no-repeat;
+  }
+
+  .tags {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tags li {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--ivory-2);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* Calculadora */
+  .calc {
+    display: grid;
+    gap: 18px;
+    margin-block: 10px;
+    padding: clamp(22px, 3vw, 32px);
+    border-radius: var(--radius);
+    background: var(--night-2);
+    box-shadow: 0 0 0 1px var(--night-3);
+  }
+
+  .calc h3 {
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  .calc__field {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--on-night-2);
+  }
+
+  .calc__input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 60px;
+    padding: 0 18px;
+    border-radius: 12px;
+    background: var(--night);
+    box-shadow: 0 0 0 1px var(--night-3);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--on-night);
+  }
+
+  .calc__input:focus-within {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+
+  .calc__input input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    outline: none;
+  }
+
+  .calc__out {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+  }
+
+  .calc__out div {
+    padding: 14px 16px 0 0;
+    border-top: 1px solid var(--night-3);
+  }
+
+  .calc__out dt {
+    font-size: 13px;
+    color: var(--on-night-2);
+  }
+
+  .calc__out dd {
+    margin: 4px 0 0;
+    font-size: clamp(18px, 2vw, 24px);
+    font-weight: 700;
+  }
+
+  .calc__total dd {
+    color: var(--gold-night);
+  }
+
+  .calc__note {
+    font-size: 13px;
+    color: var(--on-night-2);
+  }
+
+  .calc .pill {
+    justify-self: start;
+  }
+
+  @media (max-width: 560px) {
+    .calc__out {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .calc__out div {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0;
+    }
+
+    .calc__out dd {
+      margin: 0;
+    }
+  }
+
+  /* Fotografía */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-block: 6px;
+  }
+
+  .gallery :global(img) {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  /* Documento */
+  .doc {
+    padding: 22px 24px;
+    border-radius: var(--radius);
+    background: var(--white);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink);
+  }
+
+  .doc__title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+    margin-bottom: 10px;
+  }
+
+  .doc ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* Custodia */
+  .modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .mode {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    padding: clamp(22px, 3vw, 34px);
+    border-radius: var(--radius);
+    background: var(--night-2);
+    box-shadow: 0 0 0 1px var(--night-3);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--on-night-2);
+  }
+
+  .mode h3 {
+    font-size: 22px;
+    color: var(--on-night);
+    letter-spacing: -0.01em;
+  }
+
+  .mode__tag {
+    justify-self: start;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--night-3);
+    color: var(--gold-night);
+  }
+
+  .subs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(24px, 4vw, 56px);
+    padding-top: clamp(16px, 2vw, 24px);
+    border-top: 1px solid var(--night-3);
+  }
+
+  .sub {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--on-night-2);
+  }
+
+  .sub h3 {
+    font-size: 19px;
+    color: var(--on-night);
+  }
+
+  .step__closing {
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 600;
+    line-height: 1.4;
+    max-width: 44ch;
+    color: var(--on-night);
+  }
+
+  @media (max-width: 860px) {
+    .step {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .modes,
+    .subs {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Cierre */
+  .cons__end {
+    background: var(--night);
+    color: var(--on-night);
+    padding-block: clamp(80px, 10vw, 150px);
+    text-align: center;
+    border-top: 1px solid var(--night-3);
+  }
+
+  .cons__end-in {
+    display: grid;
+    justify-items: center;
+    gap: 22px;
+  }
+
+  .cons__brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.6vw, 46px);
+    letter-spacing: 0.14em;
+    color: var(--gold-hi);
+  }
+
+  .cons__motto {
+    font-size: clamp(24px, 2.8vw, 36px);
+    font-weight: 600;
+  }
+
+  .cons__meta {
+    color: var(--on-night-2);
+    font-size: 15px;
+    letter-spacing: 0.06em;
+  }
+</style>
+
+<script>
+  import { calcularConsignacion, parseMonto } from '../lib/consignacion';
+  import { formatCLP } from '../lib/relojes';
+  import { whatsappUrl } from '../data/site';
+
+  const input = document.getElementById('liquido') as HTMLInputElement;
+  const out = (id: string) => document.getElementById(id)!;
+  const cta = document.getElementById('calc-cta') as HTMLAnchorElement;
+  const fmt = new Intl.NumberFormat('es-CL');
+
+  function update() {
+    const liquido = parseMonto(input.value);
+    const r = calcularConsignacion(liquido);
+    out('out-precio').textContent = formatCLP(r.precioVenta);
+    out('out-comision').textContent = formatCLP(r.comision);
+    out('out-liquido').textContent = formatCLP(r.liquido);
+    cta.href = whatsappUrl(
+      liquido
+        ? `Hola, quiero consignar mi reloj y recibir ${formatCLP(r.liquido)} líquidos (precio de venta aprox. ${formatCLP(r.precioVenta)}). ¿Cómo partimos? Gracias`
+        : 'Hola, quiero consignar mi reloj. ¿Me pueden contar cómo empezar? Gracias',
+    );
+  }
+
+  input.addEventListener('input', () => {
+    // Formatea con puntos de miles mientras se escribe, manteniendo el cursor al final.
+    const n = parseMonto(input.value);
+    input.value = n ? fmt.format(n) : '';
+    update();
+  });
+  document.getElementById('calc')!.addEventListener('submit', (e) => e.preventDefault());
+  update();
+</script>

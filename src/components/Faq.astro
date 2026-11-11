@@ -7,7 +7,8 @@ const faqs = [
   { q: '¿El pago es realmente inmediato?', a: 'Sí. Cuando acordamos la compra y verificamos la pieza, te pagamos en el momento.' },
   {
     q: '¿Qué es la consignación?',
-    a: 'Dejas tu reloj con nosotros y lo ofrecemos a nuestros clientes por un precio acordado contigo. Cuando se vende, recibes tu parte. Te explicamos las condiciones por DM.',
+    a: 'Vendemos tu reloj por ti, a un precio acordado contigo. Cobramos un 10 % solo si se vende, firmamos un acuerdo y el reloj puede quedarse contigo mientras lo promocionamos.',
+    link: { href: '/consignacion', label: 'Ver cómo funciona la consignación' },
   },
   {
     q: '¿Qué cubre la garantía?',
@@ -28,7 +29,7 @@ const faqs = [
           <summary>
             {f.q} <span class="pm" aria-hidden="true" />
           </summary>
-          <div class="ans"><div><p>{f.a}</p></div></div>
+          <div class="ans"><div><p>{f.a}</p>{f.link && <p><a href={f.link.href}>{f.link.label}</a></p>}</div></div>
         </details>
       ))
     }
