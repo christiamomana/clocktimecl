@@ -23,10 +23,37 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
         <span class="eyebrow">Nuestra historia</span>
         <h1>{prologo}</h1>
         <p class="tale__sub">Un cuento en seis capítulos sobre un reloj de oro, una madre y un profesor.</p>
-        <a class="tale__start" href="#capitulo-i">
-          Comenzar a leer
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
-        </a>
+        <div class="tale__ways">
+          <a class="tale__start" href="#capitulo-i">
+            Comenzar a leer
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
+          </a>
+          <a class="tale__start tale__start--muted" href="#video">o mira el video (1:13)</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="tale__video" id="video" aria-labelledby="videoTitle">
+      <div class="wrap tale__video-in">
+        <div class="tale__video-text">
+          <span class="eyebrow">En video</span>
+          <h2 id="videoTitle">La historia en un minuto</h2>
+          <p>El reloj de oro, el profesor y la frase que lo cambió todo. Ideal para compartir.</p>
+        </div>
+        <div class="tale__phone">
+          <video
+            controls
+            playsinline
+            preload="none"
+            poster="/video/nuestra-historia-poster.webp"
+            width="720"
+            height="1280"
+            aria-label="Video: Nuestra historia de ClockTime Chile"
+          >
+            <source src="/video/nuestra-historia.mp4" type="video/mp4" />
+            <a href="/video/nuestra-historia.mp4">Descargar el video</a>
+          </video>
+        </div>
       </div>
     </section>
 
@@ -150,13 +177,37 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
     font-size: 15px;
   }
 
+  .tale__ways {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 28px;
+  }
+
+  .tale__start--muted {
+    color: var(--on-night-2);
+    font-weight: 500;
+  }
+
   .tale__start svg {
     width: 18px;
     height: 18px;
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .tale__start svg {
+    .tale__ways {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 28px;
+  }
+
+  .tale__start--muted {
+    color: var(--on-night-2);
+    font-weight: 500;
+  }
+
+  .tale__start svg {
       animation: nudge 1.8s var(--ease) infinite;
     }
 
@@ -164,6 +215,70 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
       50% {
         transform: translateY(5px);
       }
+    }
+  }
+
+  /* Video */
+  .tale__video {
+    background: var(--night-2);
+    color: var(--on-night);
+    padding-block: clamp(64px, 8vw, 112px);
+  }
+
+  .tale__video-in {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(32px, 6vw, 96px);
+    max-width: 1000px;
+    margin-inline: auto;
+  }
+
+  .tale__video-text {
+    display: grid;
+    gap: 14px;
+  }
+
+  .tale__video-text .eyebrow {
+    color: var(--gold-night);
+    margin: 0;
+  }
+
+  .tale__video-text h2 {
+    font-size: var(--t-h2);
+  }
+
+  .tale__video-text p {
+    font-size: var(--t-lead);
+    color: var(--on-night-2);
+    max-width: 34ch;
+  }
+
+  .tale__phone {
+    width: min(360px, 100%);
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--night);
+    box-shadow: 0 0 0 1px rgba(201, 164, 92, 0.4), 0 30px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .tale__phone video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 9 / 16;
+    background: var(--night);
+  }
+
+  @media (max-width: 760px) {
+    .tale__video-in {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      text-align: center;
+    }
+
+    .tale__video-text p {
+      margin-inline: auto;
     }
   }
 
