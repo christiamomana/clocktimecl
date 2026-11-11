@@ -13,8 +13,9 @@ import Valuation from '../components/Valuation.astro';
 import Footer from '../components/Footer.astro';
 import WhatsAppButton from '../components/WhatsAppButton.astro';
 import { getVitrina } from '../lib/server/relojes';
+import { getPortada } from '../lib/server/portada';
 
-const relojes = await getVitrina();
+const [relojes, portada] = await Promise.all([getVitrina(), getPortada()]);
 // La CDN de Vercel guarda la página un minuto; los cambios del admin se ven en ~1 minuto.
 Astro.response.headers.set('cache-control', 'public, s-maxage=60, stale-while-revalidate=600');
 ---
@@ -22,7 +23,7 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=60, stale-while-re
 <Layout>
   <Header />
   <main id="top">
-    <Hero />
+    <Hero portada={portada} />
     <Stories />
     <Collection relojes={relojes} />
     <Sell />
