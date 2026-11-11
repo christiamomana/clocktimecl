@@ -180,7 +180,8 @@ const specsText = r.especificaciones.map((s) => `${s.nombre}: ${s.valor}`).join(
       </label>
       <label class="field">
         <span>Precio (CLP)</span>
-        <input type="text" inputmode="numeric" name="precio" id="precio" value={r.precio ?? ''} placeholder="Vacío = “Consultar precio”" />
+        <input type="text" inputmode="numeric" name="precio" id="precio" value={r.precio ?? ''} placeholder="Ej. 4.290.000" />
+        <small>Opcional. Si lo dejas vacío no se muestra precio y el botón dice “Consultar precio”.</small>
       </label>
       <label class="field">
         <span>Orden</span>

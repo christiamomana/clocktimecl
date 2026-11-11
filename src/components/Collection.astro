@@ -82,6 +82,7 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
               <small>{r.marca}</small>
               <b>{r.modelo}</b>
               <span class="tnum">{[r.referencia, r.medida].filter(Boolean).join(' · ')}</span>
+              {r.precio && <span class="tile__price tnum">{formatCLP(r.precio)}</span>}
             </button>
           ))}
         </div>
@@ -186,6 +187,13 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
   .filter[aria-pressed='true'] {
     background: var(--ink);
     color: var(--ivory);
+  }
+
+  .tile__price {
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-ink);
   }
 
   .coll__empty {
