@@ -1,22 +1,49 @@
 ---
+import type { Portada } from '../lib/server/portada';
+
+interface Props {
+  portada: Portada;
+}
+
+// La foto y los textos de la portada se cambian desde /admin/portada; sin cambios, la foto original.
+const { portada } = Astro.props;
 const widths = [480, 800, 1280, 1440];
 const set = (ext: string) => widths.map((w) => `/img/hero-radiomir-tall-${w}.${ext} ${w}w`).join(', ');
+const img = portada.imagen;
 ---
 
 <section class="hero" aria-labelledby="heroTitle">
-  <picture class="hero__media">
-    <source type="image/avif" srcset={set('avif')} sizes="100vw" />
-    <img
-      src="/img/hero-radiomir-tall-1280.webp"
-      srcset={set('webp')}
-      sizes="100vw"
-      width="1440"
-      height="1882"
-      alt="Panerai Radiomir S.L.C. en su estuche, con correa de cuero envejecido"
-      fetchpriority="high"
-      decoding="async"
-    />
-  </picture>
+  {
+    img ? (
+      <picture class="hero__media">
+        <img
+          src={`/fotos/i${img.id}-m.webp`}
+          srcset={`/fotos/i${img.id}-s.webp 480w, /fotos/i${img.id}-m.webp 900w, /fotos/i${img.id}-l.webp 1600w`}
+          sizes="(min-width: 701px) 52vw, 100vw"
+          width={img.ancho}
+          height={img.alto}
+          alt={portada.alt}
+          style={portada.encuadre ? `object-position:${portada.encuadre}` : undefined}
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+    ) : (
+      <picture class="hero__media">
+        <source type="image/avif" srcset={set('avif')} sizes="100vw" />
+        <img
+          src="/img/hero-radiomir-tall-1280.webp"
+          srcset={set('webp')}
+          sizes="100vw"
+          width="1440"
+          height="1882"
+          alt={portada.alt}
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+    )
+  }
   <div class="hero__text wrap center">
     <span class="eyebrow">Alta relojería en Concepción</span>
     <h1 id="heroTitle">El tiempo<br />también <em>inspira</em></h1>
@@ -28,8 +55,12 @@ const set = (ext: string) => widths.map((w) => `/img/hero-radiomir-tall-${w}.${e
       <a class="pill pill--glass" href="#tasar">Tasar mi reloj</a>
     </div>
   </div>
-  <div class="hero__caption wrap">
-    <span>Panerai Radiomir S.L.C. · PAM00425</span>
-    <span>Fotografía de nuestra vitrina</span>
-  </div>
+  {
+    (portada.pie1 || portada.pie2) && (
+      <div class="hero__caption wrap">
+        <span>{portada.pie1}</span>
+        <span>{portada.pie2}</span>
+      </div>
+    )
+  }
 </section>

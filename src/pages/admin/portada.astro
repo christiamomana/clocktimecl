@@ -1,0 +1,178 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { hasDatabase } from '../../lib/server/db';
+import { getPortada, restaurarPortada, setPortadaTextos } from '../../lib/server/portada';
+import { ENCUADRES } from '../../lib/relojes';
+
+if (!hasDatabase()) return Astro.redirect('/admin');
+
+let ok = Astro.url.searchParams.get('ok') ?? '';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = String(form.get('accion'));
+  try {
+    if (accion === 'textos') {
+      const enc = String(form.get('encuadre') ?? '');
+      await setPortadaTextos({
+        pie1: String(form.get('pie1') ?? '').trim().slice(0, 120),
+        pie2: String(form.get('pie2') ?? '').trim().slice(0, 120),
+        alt: String(form.get('alt') ?? '').trim().slice(0, 200),
+        encuadre: ENCUADRES.some((e) => e.value === enc) ? enc : null,
+      });
+      ok = 'Portada actualizada. Se verá en la página en cerca de un minuto.';
+    } else if (accion === 'restaurar') {
+      await restaurarPortada();
+      ok = 'Se restauró la portada original.';
+    }
+  } catch (e) {
+    error = (e as Error).message;
+  }
+}
+
+const p = await getPortada();
+const preview = p.imagen ? `/fotos/i${p.imagen.id}-m.webp` : '/img/hero-radiomir-tall-800.webp';
+---
+
+<AdminLayout title="Portada">
+  <div class="head">
+    <div>
+      <h1>Portada</h1>
+      <p class="muted">La foto grande de la página principal y los textos que van debajo de ella.</p>
+    </div>
+    <a class="btn" href="/" target="_blank" rel="noopener">Ver la página ↗</a>
+  </div>
+
+  {ok && <p class="notice notice--ok">{ok}</p>}
+  {error && <p class="notice notice--error">{error}</p>}
+
+  <div class="layout">
+    <section class="card foto" aria-labelledby="fotoTitle">
+      <h2 id="fotoTitle">Foto</h2>
+      <div class="preview">
+        <img src={preview} alt="Foto actual de la portada" style={p.encuadre ? `object-position:${p.encuadre}` : undefined} />
+        {!p.imagen && <span class="chip">Original</span>}
+      </div>
+      <p class="small muted">
+        Usa una foto <b>vertical</b> (4:5 o más alta), con el reloj al centro y fondo oscuro. En computador se ve en la mitad
+        derecha de la pantalla; en el celular, de fondo a lo ancho.
+      </p>
+      <div class="row">
+        <label class="btn btn--primary" for="portada-input">Cambiar foto</label>
+        <input id="portada-input" type="file" accept="image/*" hidden />
+        <span class="small muted" id="portada-status" role="status"></span>
+      </div>
+    </section>
+
+    <form method="post" class="card form" aria-labelledby="textosTitle">
+      <input type="hidden" name="accion" value="textos" />
+      <h2 id="textosTitle">Textos y encuadre</h2>
+      <label class="field">
+        <span>Texto bajo la foto (izquierda)</span>
+        <input type="text" name="pie1" id="pie1" value={p.pie1} placeholder="Panerai Radiomir S.L.C. · PAM00425" />
+        <small>Normalmente, el reloj de la foto. Déjalo vacío para no mostrarlo.</small>
+      </label>
+      <label class="field">
+        <span>Texto bajo la foto (derecha)</span>
+        <input type="text" name="pie2" id="pie2" value={p.pie2} placeholder="Fotografía de nuestra vitrina" />
+      </label>
+      <label class="field">
+        <span>Descripción de la foto</span>
+        <input type="text" name="alt" id="alt" value={p.alt} placeholder="Panerai Radiomir en su estuche" />
+        <small>Para buscadores y lectores de pantalla.</small>
+      </label>
+      {
+        p.imagen && (
+          <label class="field">
+            <span>Encuadre</span>
+            <select name="encuadre" id="encuadre">
+              {ENCUADRES.map((e) => (
+                <option value={e.value} selected={e.value === p.encuadre}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+            <small>Qué parte de la foto se mantiene al recortarla.</small>
+          </label>
+        )
+      }
+      <div class="row">
+        <button class="btn btn--primary" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  {
+    p.imagen && (
+      <form method="post" data-confirm="¿Volver a la foto y los textos originales de la portada?">
+        <input type="hidden" name="accion" value="restaurar" />
+        <button class="btn btn--danger">Restaurar la portada original</button>
+      </form>
+    )
+  }
+</AdminLayout>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .foto {
+    display: grid;
+    gap: 14px;
+  }
+  .preview {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--night);
+  }
+  .preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 48%;
+  }
+  .preview .chip {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  @media (max-width: 760px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+
+<script>
+  import { shrink } from '../../lib/client/upload';
+
+  document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((f) =>
+    f.addEventListener('submit', (e) => {
+      if (!confirm(f.dataset.confirm)) e.preventDefault();
+    }),
+  );
+
+  const input = document.getElementById('portada-input') as HTMLInputElement;
+  const status = document.getElementById('portada-status')!;
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    status.textContent = 'Subiendo foto…';
+    try {
+      const body = new FormData();
+      body.append('foto', await shrink(file), 'portada.jpg');
+      const res = await fetch('/api/admin/portada', { method: 'POST', body });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Error ${res.status}`);
+      location.href = `/admin/portada?ok=${encodeURIComponent('Foto de portada cambiada. Se verá en la página en cerca de un minuto.')}`;
+    } catch (e) {
+      status.textContent = (e as Error).message;
+      input.value = '';
+    }
+  });
+</script>

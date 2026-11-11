@@ -59,6 +59,23 @@ export function ensureSchema(): Promise<void> {
         creado timestamptz not null default now()
       )`;
     await db`create index if not exists fotos_reloj_idx on fotos (reloj_id, posicion)`;
+    // Imágenes del sitio que no son de un reloj (p. ej. la portada) y ajustes editables desde el admin.
+    await db`
+      create table if not exists imagenes (
+        id serial primary key,
+        ancho integer not null,
+        alto integer not null,
+        l bytea not null,
+        m bytea not null,
+        s bytea not null,
+        creado timestamptz not null default now()
+      )`;
+    await db`
+      create table if not exists ajustes (
+        clave text primary key,
+        valor jsonb not null,
+        actualizado timestamptz not null default now()
+      )`;
   })().catch((e) => {
     schemaReady = null;
     throw e;
