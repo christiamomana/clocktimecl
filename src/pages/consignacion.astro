@@ -730,6 +730,7 @@ const pasos = [
 
   .gallery :global(img) {
     width: 100%;
+    height: auto; /* el atributo height de la foto no debe ganarle a la proporción 4:5 */
     aspect-ratio: 4 / 5;
     object-fit: cover;
     border-radius: 12px;
