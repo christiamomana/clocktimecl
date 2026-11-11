@@ -82,6 +82,7 @@ button { font: inherit; color: inherit; }
 .bar__links a { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .bar__links a:hover { color: var(--gold-ink); }
 .bar__links svg { width: 16px; height: 16px; }
+@media (max-width: 1180px) { .bar__links a[href="/consignacion"] { display: none; } }
 @media (max-width: 900px) { .bar__links a:not(:last-child) { display: none; } .bar__links a span { display: none; } }
 
 /* Full-screen menu */
@@ -263,6 +264,7 @@ button { font: inherit; color: inherit; }
 .faq details[open] .ans { grid-template-rows: 1fr; }
 .faq .ans > div { overflow: hidden; }
 .faq .ans p { padding-bottom: 26px; color: var(--ink-2); max-width: 62ch; }
+.faq .ans a { color: var(--gold-ink); font-weight: 600; }
 
 /* ---------- Valuation form ---------- */
 .val { padding-block: var(--section); background: var(--ivory-2); }
