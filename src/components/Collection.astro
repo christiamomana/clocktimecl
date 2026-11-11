@@ -106,10 +106,21 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
   first && (
     <section class="piece" id="ficha" aria-labelledby="pTitle">
       <div class="piece__grid">
-        <div class="piece__art">
-          <div class="piece__img" id="pArt">
-            <img {...img(first.fotos[0], fichaSizes, `${first.marca} ${first.modelo}`, first.encuadre, true)} />
+        <div class="piece__art" id="pArtBox" aria-roledescription="carrusel" aria-label="Fotos del reloj">
+          <div class="gal" id="pArt" tabindex="0">
+            {first.fotos.map((f, i) => (
+              <div class="gal__slide" aria-label={`Foto ${i + 1} de ${first.fotos.length}`}>
+                <img {...img(f, fichaSizes, `${first.marca} ${first.modelo}, foto ${i + 1}`, i === 0 ? first.encuadre : '50% 50%', i === 0)} />
+              </div>
+            ))}
           </div>
+          <button class="gal__btn gal__btn--prev" id="pPrev" type="button" aria-label="Foto anterior" hidden={first.fotos.length < 2}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <button class="gal__btn gal__btn--next" id="pNext" type="button" aria-label="Foto siguiente" hidden={first.fotos.length < 2}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <span class="gal__count tnum" id="pCount" aria-live="polite" hidden={first.fotos.length < 2}>1 / {first.fotos.length}</span>
           <div class="piece__thumbs" id="pThumbs" hidden={first.fotos.length < 2}>
             {first.fotos.map((f, i) => (
               <button type="button" data-f={i} aria-pressed={i === 0 ? 'true' : 'false'} aria-label={`Foto ${i + 1}`}>
@@ -201,15 +212,105 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
     font-size: var(--t-lead);
   }
 
-  .piece__img {
+  /* Carrusel de fotos de la ficha: deslizar en móvil, flechas en escritorio */
+  .gal {
     position: absolute;
     inset: 0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
     transition: opacity 0.4s var(--ease), transform 1s var(--ease);
   }
 
-  .piece__art.is-out .piece__img {
+  .gal::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gal:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -4px;
+  }
+
+  .piece__art.is-out .gal {
     opacity: 0;
     transform: scale(1.04);
+  }
+
+  .gal :global(.gal__slide) {
+    position: relative;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .gal :global(.gal__slide img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gal__btn {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin-top: -24px;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    background: rgba(11, 11, 12, 0.55);
+    color: var(--on-night);
+    backdrop-filter: blur(6px);
+    transition: background-color 0.2s var(--ease), opacity 0.2s var(--ease);
+  }
+
+  .gal__btn:hover {
+    background: rgba(11, 11, 12, 0.85);
+  }
+
+  .gal__btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .gal__btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .gal__btn--prev {
+    left: 16px;
+  }
+
+  .gal__btn--next {
+    right: 16px;
+  }
+
+  .gal__count {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(11, 11, 12, 0.6);
+    color: var(--on-night);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  @media (hover: none) {
+    .gal__btn {
+      display: none;
+    }
   }
 
   .piece__thumbs {
@@ -284,15 +385,89 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
     return n;
   };
 
-  function photo(f: Ficha, i: number) {
-    const p = f.fotos[i];
-    const img = document.createElement('img');
-    Object.assign(img, { src: p.src, srcset: p.srcset, width: p.ancho, height: p.alto, alt: `${f.marca} ${f.modelo}`, decoding: 'async' });
-    img.sizes = '(max-width: 900px) 100vw, 55vw';
-    img.style.objectPosition = f.encuadre;
-    art?.replaceChildren(img);
-    thumbs?.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === String(i))));
+  const prev = $('pPrev') as HTMLButtonElement | null;
+  const next = $('pNext') as HTMLButtonElement | null;
+  const count = $('pCount');
+  let photoIndex = 0;
+
+  const slideCount = () => art?.children.length ?? 0;
+
+  /** Marca la foto visible: contador, miniatura activa y estado de las flechas. */
+  function markPhoto(i: number) {
+    photoIndex = i;
+    const n = slideCount();
+    if (count) count.textContent = `${i + 1} / ${n}`;
+    if (prev) prev.disabled = i <= 0;
+    if (next) next.disabled = i >= n - 1;
+    thumbs?.querySelectorAll<HTMLElement>('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === String(i))));
+    const active = thumbs?.querySelector<HTMLElement>(`button[data-f="${i}"]`);
+    if (active && thumbs) thumbs.scrollTo({ left: active.offsetLeft - thumbs.clientWidth / 2 + active.clientWidth / 2, behavior: 'smooth' });
   }
+
+  function goTo(i: number, smooth = true) {
+    if (!art) return;
+    const target = Math.max(0, Math.min(slideCount() - 1, i));
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    art.scrollTo({ left: target * art.clientWidth, behavior: smooth && !reduce ? 'smooth' : 'auto' });
+    markPhoto(target);
+  }
+
+  /** Arma el carrusel de un reloj: una diapositiva por foto, la primera con su encuadre. */
+  function renderGallery(f: Ficha) {
+    if (!art) return;
+    art.replaceChildren(
+      ...f.fotos.map((p, i) => {
+        const slide = document.createElement('div');
+        slide.className = 'gal__slide';
+        slide.setAttribute('aria-label', `Foto ${i + 1} de ${f.fotos.length}`);
+        const img = document.createElement('img');
+        Object.assign(img, {
+          src: p.src,
+          srcset: p.srcset,
+          width: p.ancho,
+          height: p.alto,
+          alt: `${f.marca} ${f.modelo}, foto ${i + 1}`,
+          decoding: 'async',
+          loading: i === 0 ? 'eager' : 'lazy',
+        });
+        img.sizes = '(max-width: 900px) 100vw, 55vw';
+        img.style.objectPosition = i === 0 ? f.encuadre : '50% 50%';
+        slide.append(img);
+        return slide;
+      }),
+    );
+    const many = f.fotos.length > 1;
+    [prev, next, count, thumbs].forEach((n) => n && (n.hidden = !many));
+    renderThumbs(f);
+    art.scrollTo({ left: 0, behavior: 'auto' });
+    markPhoto(0);
+  }
+
+  // Al deslizar con el dedo, actualiza la foto marcada según la posición del carrusel.
+  let scrollTimer = 0;
+  art?.addEventListener(
+    'scroll',
+    () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = window.setTimeout(() => {
+        const i = Math.round(art.scrollLeft / Math.max(1, art.clientWidth));
+        if (i !== photoIndex) markPhoto(i);
+      }, 80);
+    },
+    { passive: true },
+  );
+  prev?.addEventListener('click', () => goTo(photoIndex - 1));
+  next?.addEventListener('click', () => goTo(photoIndex + 1));
+  art?.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goTo(photoIndex - 1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goTo(photoIndex + 1);
+    }
+  });
+  addEventListener('resize', () => goTo(photoIndex, false));
 
   function renderThumbs(f: Ficha) {
     if (!thumbs) return;
@@ -318,11 +493,10 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
     if (!f || !art || !track) return;
     current = i;
     track.querySelectorAll<HTMLElement>('.tile').forEach((t) => t.setAttribute('aria-pressed', String(t.dataset.i === String(i))));
-    const box = art.parentElement!;
+    const box = $('pArtBox')!;
     box.classList.add('is-out');
     setTimeout(() => {
-      photo(f, 0);
-      renderThumbs(f);
+      renderGallery(f);
       $('pBrand')!.textContent = f.marca;
       $('pTitle')!.textContent = f.modelo;
       $('pDesc')!.textContent = f.descripcion;
@@ -366,8 +540,9 @@ const img = (f: FotoView, sizes: string, alt: string, encuadre: string, eager = 
 
   thumbs?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-f]');
-    if (b) photo(fichas[current], Number(b.dataset.f));
+    if (b) goTo(Number(b.dataset.f));
   });
+  markPhoto(0);
 
   if (track) {
     track.addEventListener('click', (e) => {

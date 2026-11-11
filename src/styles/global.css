@@ -176,7 +176,6 @@ button { font: inherit; color: inherit; }
 .piece { background: var(--night); color: var(--on-night); }
 .piece__grid { display: grid; grid-template-columns: 1.1fr 1fr; min-height: min(860px, 100svh); }
 .piece__art { position: relative; overflow: hidden; background: var(--night); min-height: 100%; }
-.piece__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .piece__txt { display: flex; flex-direction: column; justify-content: center; gap: 26px; padding-block: clamp(48px, 7vw, 120px); padding-inline: clamp(24px, 6vw, 110px); }
 .piece__txt .eyebrow { color: var(--gold-night); margin: 0; }
 .piece__txt h2 { font-size: clamp(34px, 3.8vw, 58px); }
@@ -189,7 +188,10 @@ button { font: inherit; color: inherit; }
 .incl-list span { font-size: 14px; padding: 6px 14px; border-radius: 999px; background: var(--night-3); }
 .piece .actions { justify-content: flex-start; }
 .piece__note { font-size: 14px; color: var(--on-night-2); }
-@media (max-width: 900px) { .piece__grid { grid-template-columns: 1fr; } .piece__art { min-height: 0; aspect-ratio: 4 / 5; } }
+/* La foto ocupa el alto de la pantalla bajo el menú y queda fija mientras se lee la ficha,
+   así las flechas y miniaturas del carrusel siempre se ven. */
+@media (min-width: 901px) { .piece__art { position: sticky; top: 72px; height: calc(100svh - 72px); min-height: 0; align-self: start; } }
+@media (max-width: 900px) { .piece__grid { grid-template-columns: 1fr; } .piece__art { min-height: 0; aspect-ratio: 4 / 5; max-height: calc(100svh - 72px); width: 100%; } }
 
 /* ---------- Sell: full-bleed dark statement + steps ---------- */
 .sell { position: relative; background: var(--night-2); color: var(--on-night); padding-block: var(--section); overflow: hidden; }
