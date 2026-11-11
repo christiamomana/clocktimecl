@@ -227,7 +227,8 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
 
   .tale__video-in {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    /* Columna del video con ancho fijo: con "auto" tomaba el ancho del archivo (720 px) y tapaba el texto. */
+    grid-template-columns: minmax(0, 1fr) 360px;
     align-items: center;
     gap: clamp(32px, 6vw, 96px);
     max-width: 1000px;
@@ -255,7 +256,8 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
   }
 
   .tale__phone {
-    width: min(360px, 100%);
+    width: 100%;
+    max-width: 360px;
     border-radius: 28px;
     overflow: hidden;
     background: var(--night);
@@ -270,7 +272,7 @@ Astro.response.headers.set('cache-control', 'public, s-maxage=300, stale-while-r
     background: var(--night);
   }
 
-  @media (max-width: 760px) {
+  @media (max-width: 1000px) {
     .tale__video-in {
       grid-template-columns: minmax(0, 1fr);
       justify-items: center;
